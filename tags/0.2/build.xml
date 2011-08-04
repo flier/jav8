@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="jav8" default="dist" basedir="." xmlns:cpptasks="antlib:net.sf.antcontrib.cpptasks">
+	<property environment="env"/>
+	
+	<property name="project.name" value="jav8"/>
+	<property name="project.version" value="0.2"/>
+	<property name="project.mode" value="release" />
+	
+	<property name="src.dir" value="${basedir}/src" />
+	<property name="docs.dir" value="${basedir}/docs" />	
+	<property name="test.dir" value="${basedir}/test" />	
+	<property name="out.dir" value="${basedir}/build" />
+	<property name="classes.dir" value="${out.dir}/classes" />
+	<property name="test.classes.dir" value="${out.dir}/test-classes" />
+	<property name="test.report.dir" value="${out.dir}/test-report" />
+	<property name="obj.dir" value="${out.dir}/objs" />	
+	<property name="bin.dir" value="${out.dir}/bin/${project.mode}" />
+	<property name="jni.dir" value="${basedir}/jni" />
+	<property name="dist.dir" value="${basedir}/dist" />
+	<property name="jar.file" value="${dist.dir}/${project.name}-jsr223-${project.version}.jar" />
+	<property name="lib.dir" value="${basedir}/lib" />
+	<property name="junit4.path" value="${lib.dir}/junit-4.9b3.jar" />
+	
+	<condition property="is_win">
+		<os family="windows" />
+	</condition>
+	<condition property="is_unix">
+		<os family="unix" />
+	</condition>	
+	<condition property="is_debug">
+		<equals arg1="${project.mode}" arg2="debug"/>
+	</condition>
+	
+	<condition property="lib.v8" value="v8_g" else="v8">
+		<istrue value="${is_debug}"/>
+	</condition>
+		
+	<property file="${basedir}/build.properties" />
+
+	<path id="build.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+	
+	<target name="init_win" if="is_win">
+		<property name="cc.compiler" value="msvc"/>
+	</target>
+	
+	<target name="init_unix" if="is_unix">
+		<property name="cc.compiler" value="gcc"/>
+	</target>
+		
+	<target name="clean">
+		<delete file="${dist.dir}/*.jar" />
+	</target>
+	<target name="prepare" depends="init_win, init_unix">
+		<mkdir dir="${classes.dir}"/>
+		<mkdir dir="${obj.dir}" />
+	</target>
+	<target name="compile" depends="clean, prepare">
+		<javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false">
+			<include name="**/*.java"/>
+		</javac>
+		<copy todir="${classes.dir}/META-INF">		
+			<fileset dir="${src.dir}/META-INF" />
+		</copy>
+	</target>	
+	<target name="docs" depends="compile">
+		<mkdir dir="${docs.dir}"/>
+		<javadoc packagenames="lu.flier" sourcepath="${src.dir}" destdir="${docs.dir}">
+			<fileset dir="${src.dir}">
+				<include name="**" />
+				<exclude name="META-INF/**" />
+			</fileset>
+		</javadoc>
+	</target>	
+	<target name="jni" depends="compile">
+		<echo>Generating JNI header ...</echo>
+		<mkdir dir="${jni.dir}"/>		
+		<javah classpath="${classes.dir}" outputfile="${jni.dir}/jav8.h">
+			<class name="lu.flier.script.ManagedV8Object"/>
+			<class name="lu.flier.script.V8ScriptEngineFactory"/>
+			<class name="lu.flier.script.V8CompiledScript"/>			
+			<class name="lu.flier.script.V8Context"/>
+			<class name="lu.flier.script.V8Object"/>
+			<class name="lu.flier.script.V8Array"/>
+			<class name="lu.flier.script.V8Function"/>
+		</javah>
+		
+		<echo>Building JNI library ...</echo>
+		<mkdir dir="${bin.dir}"/>
+		<cpptasks:cc name="${cc.compiler}"
+			objdir="${bin.dir}" outfile="${project.name}" 
+			runtime="static" link="static" outtype="shared" 
+			multithreaded="true" optimize="speed" incremental="${is_win}"
+			debug="${is_debug}" exceptions="true" rtti="true">			
+			<fileset dir="${jni.dir}" includes="*.cpp"/>			
+
+			<compilerarg value="/GL" if="is_win"/>
+			<compilerarg value="/EHsc" if="is_win"/>
+			<linkerarg value="/LTCG" if="is_win"/>
+			<linkerarg value="/INCREMENTAL" if="is_win"/>			
+			
+			<includepath>
+				<path>
+					<pathelement path="${env.JAVA_HOME}/include"/>							
+					<pathelement path="${env.JAVA_HOME}/include/win32"/>
+					<pathelement path="${env.V8_HOME}/include"/>
+				</path>
+			</includepath>
+			<libset libs="winmm,ws2_32" if="is_win"/>
+			<libset libs="stdc++" if="is_unix"/>
+			<libset dir="${env.V8_HOME}" libs="${lib.v8}"/>
+		</cpptasks:cc>
+		
+		<copy todir="${classes.dir}">
+			<fileset dir="${out.dir}" file="*.dll"/>
+			<fileset dir="${out.dir}" file="*.so"/>
+		</copy>
+	</target>
+	<target name="jar" depends="jni">
+		<mkdir dir="${dist.dir}"/>		
+		<jar destfile="${jar.file}" basedir="${classes.dir}">
+			<include name="**/*.class"/>
+			<include name="**/*.dll"/>
+			<include name="**/*.so"/>
+			<include name="META-INF/**"/>
+		</jar>
+	</target>
+	<target name="test" depends="jar">
+		<mkdir dir="${test.classes.dir}"/>
+		<mkdir dir="${test.report.dir}"/>
+		<javac srcdir="${test.dir}" destdir="${test.classes.dir}" 
+			includeantruntime="false" classpath="${junit4.path};${jar.file}">
+			<include name="**/*.java"/>
+		</javac>				
+		<junit printsummary="yes" haltonfailure="yes" fork="yes">
+			<jvmarg value="-Djava.library.path=${basedir}" />
+			<formatter type="plain" usefile="flase" />
+			<formatter type="xml"/>
+			<test name="lu.flier.script.V8ScriptEngineTest" todir="${test.report.dir}" />
+			<classpath>
+				<pathelement location="${jar.file}" />
+				<pathelement location="${test.classes.dir}" />
+				<pathelement location="${junit4.path}" />							
+				<pathelement path="${java.class.path}" />
+			</classpath>
+		</junit>
+	</target>
+	<target name="dist" depends="test, docs">
+	</target>	
+	<target name="pause">
+		<echo>Press Enter to continue ...</echo>
+		<input/>
+	</target>
+</project>

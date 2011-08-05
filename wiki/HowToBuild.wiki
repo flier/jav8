@@ -1,0 +1,104 @@
+#summary How to build Jav8 from the source code
+#labels Featured,Phase-Implementation
+
+== Prebuild Packages ==
+
+If you want to try Jav8 ASAP, we suggest you use the prebuild packages for your platform.
+
+Please [http://code.google.com/p/jav8/downloads/list downloads] the package for the Windows, Linux/Debian or Android system.
+
+== Prepare ==
+
+Before build the Jav8, we should ensure the tool chain and 3rd party library is ready.
+
+=== Google V8 ===
+
+Follow the following document to download and build v8 engine as static library
+
+  [http://code.google.com/apis/v8/build.html How to Download and Build V8]
+
+set environment variable V8_HOME to the v8 root folder
+
+{{{
+export V8_HOME=<v8_path> // Linux/Unix
+}}}
+
+or
+
+{{{
+set V8_HOME=<v8_path> // Windows
+}}}
+
+If you want to build v8 with GCC 4.x at x64 platform, you should compile v8 with PIC (Position-Independent Code) mode, and set the arch to x64 for scons.
+{{{
+export CCFLAGS=-fPIC
+scons arch=x64
+}}}
+
+=== Apache Ant ===
+
+Jav8 use the Apache Ant as the build system, you should download [http://ant.apache.org/bindownload.cgi the binary distribution] and [http://ant.apache.org/manual/install.html#installing install it].
+
+Please ensure your ant could be work.
+{{{
+$ ant -v
+Apache Ant(TM) version 1.8.2 compiled on December 20 2010
+Trying the default build file: build.xml
+Buildfile: build.xml does not exist!
+Build failed
+}}}
+
+=== JDK ===
+Please ensure you have installed the JDK before build the Jav8. You could [http://www.oracle.com/technetwork/java/javase/downloads/index.html download it] or install it with the package manager.
+{{{
+#urmpi java-1.6.0-sun
+}}}
+
+== Build ==
+
+Change the current directory to the Jav8 folder, use Ant to build the library
+{{{
+$ ant
+Buildfile: /opt/disk2/home/flierlu/jav8/build.xml
+
+clean:
+
+init_win:
+
+init_unix:
+
+prepare:
+
+compile:
+
+jni:
+     [echo] Generating JNI header ...
+     [echo] Building JNI library ...
+[cpptasks:cc] Starting dependency analysis for 3 files.
+[cpptasks:cc] 3 files are up to date.
+[cpptasks:cc] 0 files to be recompiled from dependency analysis.
+[cpptasks:cc] 0 total files to be compiled.
+
+jar:
+
+test:
+    [junit] Running lu.flier.script.V8ScriptEngineTest
+    [junit] Testsuite: lu.flier.script.V8ScriptEngineTest
+    [junit] Tests run: 11, Failures: 0, Errors: 0, Time elapsed: 0.565 sec
+    [junit] Tests run: 11, Failures: 0, Errors: 0, Time elapsed: 0.565 sec
+    [junit] ------------- Standard Output ---------------
+    ...
+}}}
+
+== Troubleshooting ==
+
+=== Missing jni_md.h ===
+Jav8 use JNI to wrap the v8 engine for as a native Java library, please ensure you have installed JDK. 
+
+In some situation, the jni_md.h doesn't exists in the $JDK/include folder, please create a symbol link to fix it.
+{{{
+#cd $JDK/include
+#ln -s linux/jni_md.h  jni_md.h
+#ll jni_md.h 
+lrwxrwxrwx 1 root root 14 2011-08-05 16:22 jni_md.h -> linux/jni_md.h
+}}}

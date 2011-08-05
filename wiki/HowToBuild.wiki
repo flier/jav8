@@ -91,16 +91,3 @@ test:
     [junit] ------------- Standard Output ---------------
     ...
 }}}
-
-== Troubleshooting ==
-
-=== Missing jni_md.h ===
-Jav8 use JNI to wrap the v8 engine for as a native Java library, please ensure you have installed JDK. 
-
-In some situation, the jni_md.h doesn't exists in the $JDK/include folder, please create a symbol link to fix it.
-{{{
-#cd $JDK/include
-#ln -s linux/jni_md.h  jni_md.h
-#ll jni_md.h 
-lrwxrwxrwx 1 root root 14 2011-08-05 16:22 jni_md.h -> linux/jni_md.h
-}}}

@@ -48,6 +48,8 @@ Buildfile: build.xml does not exist!
 Build failed
 }}}
 
+After install the Ant, please download the cpptasks from [http://sourceforge.net/projects/ant-contrib/files/ant-contrib/ the ant-contrib project], and copy the cpptasks.jar to the $ANT/lib folder
+
 === JDK ===
 Please ensure you have installed the JDK before build the Jav8. You could [http://www.oracle.com/technetwork/java/javase/downloads/index.html download it] or install it with the package manager.
 {{{

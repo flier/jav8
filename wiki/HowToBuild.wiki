@@ -59,13 +59,7 @@ Please ensure you have installed the JDK before build the Jav8. You could [http:
 Change the current directory to the Jav8 folder, use Ant to build the library
 {{{
 $ ant
-Buildfile: /opt/disk2/home/flierlu/jav8/build.xml
-
-clean:
-
-init_win:
-
-init_unix:
+Buildfile: /home/flier/jav8/build.xml
 
 prepare:
 
@@ -74,18 +68,22 @@ compile:
 jni:
      [echo] Generating JNI header ...
      [echo] Building JNI library ...
-[cpptasks:cc] Starting dependency analysis for 3 files.
-[cpptasks:cc] 3 files are up to date.
-[cpptasks:cc] 0 files to be recompiled from dependency analysis.
-[cpptasks:cc] 0 total files to be compiled.
+       [cc] 3 total files to be compiled.
+       [cc] Starting link
+     [copy] Copying 1 file to /home/flier/jav8/build/classes
 
 jar:
+      [jar] Building jar: /home/flier/jav8/dist/jav8-jsr223-linux-i386-0.3.jar
 
 test:
+    [mkdir] Created dir: /home/flier/jav8/build/test-classes
+    [mkdir] Created dir: /home/flier/jav8/build/test-report
+    [javac] Compiling 1 source file to /home/flier/jav8/build/test-classes
     [junit] Running lu.flier.script.V8ScriptEngineTest
     [junit] Testsuite: lu.flier.script.V8ScriptEngineTest
-    [junit] Tests run: 11, Failures: 0, Errors: 0, Time elapsed: 0.565 sec
-    [junit] Tests run: 11, Failures: 0, Errors: 0, Time elapsed: 0.565 sec
+    [junit] Tests run: 11, Failures: 0, Errors: 0, Time elapsed: 1.056 sec
+    [junit] Tests run: 11, Failures: 0, Errors: 0, Time elapsed: 1.056 sec
     [junit] ------------- Standard Output ---------------
+    [junit] Hello, world!ScriptEngineFactory Info
     ...
 }}}

@@ -46,7 +46,10 @@
 		</or>	
 	</condition>
 	<condition property="is_x64">
-		<equals arg1="${os.arch}" arg2="amd64"/>
+	    <or>
+	        <equals arg1="${os.arch}" arg2="amd64"/>
+	        <equals arg1="${os.arch}" arg2="x86_64"/>
+	    </or>
 	</condition>
 	<condition property="is_debug">
 		<equals arg1="${project.mode}" arg2="debug"/>
@@ -70,9 +73,6 @@
 	<condition property="link.static_runtime" value="static" else="dynamic">
 		<isfalse value="${is_x64}"/>
 	</condition>
-	<condition property="lib.v8" value="v8_g" else="v8">
-		<istrue value="${is_debug}"/>
-	</condition>	
 	<condition property="cc.compiler" value="msvc" else="gcc">
 		<istrue value="${is_win}"/>
 	</condition>
@@ -82,7 +82,7 @@
 	<condition property="link.static_runtime">
 		<isfalse value="${is_x64}"/>
 	</condition>
-		
+			
     <if>        
         <equals arg1="${is_osx}" arg2="true" />
         <then>
@@ -92,7 +92,15 @@
             <property name="jar.file" value="${dist.dir}/${project.name}-jsr223-${os.family}-${os.arch}-${project.version}.jar" />
         </else>
     </if>
-
+    
+    <property name="libv8" value="v8_base,v8_snapshot" />
+    
+    <condition property="arch" value="x64" else="i32">
+        <istrue value="${is_x64}"/>
+    </condition>
+    
+    <property name="libv8.path" value="${env.V8_HOME}/out/${arch}.${project.mode}"/>
+    
 	<path id="build.classpath">
 		<fileset dir="${lib.dir}">
 			<include name="**/*.jar" />
@@ -165,12 +173,13 @@
 					<pathelement path="/System/Library/Frameworks/JavaVM.framework/Headers/"/>
 					<pathelement path="${env.V8_HOME}"/>
 					<pathelement path="${env.V8_HOME}/include"/>
+					<pathelement path="${env.V8_HOME}/src"/>
 				</path>
 			</includepath>
 			
 			<libset libs="winmm,ws2_32" if="is_win"/>
 			<libset libs="stdc++" if="is_unix"/>
-			<libset dir="${env.V8_HOME}" libs="${lib.v8}"/>
+			<libset dir="${libv8.path}" libs="${libv8}"/>
 		</cc>
 		
 		<!--

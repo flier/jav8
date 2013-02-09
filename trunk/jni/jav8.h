@@ -26,9 +26,6 @@ JNIEXPORT void JNICALL Java_lu_flier_script_ManagedV8Object_internalRelease
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Inaccessible static: names */
-/* Inaccessible static: mimeTypes */
-/* Inaccessible static: extensions */
 /*
  * Class:     lu_flier_script_V8ScriptEngineFactory
  * Method:    getParameter
@@ -48,7 +45,6 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8ScriptEngineFactory_getParamete
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Inaccessible static: _00024assertionsDisabled */
 /*
  * Class:     lu_flier_script_V8ScriptEngine
  * Method:    gc
@@ -119,7 +115,6 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8CompiledScript_internalExecute
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Inaccessible static: scopes */
 /*
  * Class:     lu_flier_script_V8Context
  * Method:    getEntered
@@ -382,6 +377,8 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8Object_internalRemove
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef lu_flier_script_V8Array_MAX_ARRAY_SIZE
+#define lu_flier_script_V8Array_MAX_ARRAY_SIZE 2147483639L
 /*
  * Class:     lu_flier_script_V8Array
  * Method:    internalGet

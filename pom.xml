@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>lu.flier.script</groupId>
+	<artifactId>jav8</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>apklib</packaging>
+	<name>Jav8</name>
+	
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	
+	<dependencies>
+		<dependency>
+			<groupId>com.google.android</groupId>
+			<artifactId>android</artifactId>
+			<version>1.6_r2</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<finalName>${project.artifactId}</finalName>
+		<sourceDirectory>src</sourceDirectory>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.5.1</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>2.4.1</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>libs</directory>
+						</fileset>
+						<fileset>
+							<directory>obj</directory>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.jayway.maven.plugins.android.generation2</groupId>
+				<artifactId>android-maven-plugin</artifactId>
+				<version>3.5.0</version>
+				<goals>
+					<goal>ndk-build</goal>
+				</goals>
+				<configuration>
+					<run>
+						<debug>true</debug>
+					</run>
+					<sdk>
+						<path>${env.ANDROID_HOME}</path>
+						<platform>1.6</platform>
+					</sdk>
+					<emulator>
+						<avd>16</avd>
+					</emulator>
+					<undeployBeforeDeploy>true</undeployBeforeDeploy>
+					<ndk>
+						<path>${env.ANDROID_NDK_HOME}</path>
+					</ndk>
+					<deleteConflictingFiles>true</deleteConflictingFiles>
+					<attachNativeArtifacts>true</attachNativeArtifacts>
+					<clearNativeArtifacts>false</clearNativeArtifacts>
+					<sign>
+						<debug>false</debug>
+					</sign>
+					<proguard>
+						<skip>true</skip>
+					</proguard>
+				</configuration>
+				<extensions>true</extensions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

@@ -3,8 +3,6 @@
 	<property environment="env"/>
 	
 	<property name="project.name" value="jav8"/>
-	<property name="project.version" value="0.4"/>
-	<property name="project.mode" value="release" />
 	
 	<property name="src.dir" value="${basedir}/src" />
 	<property name="docs.dir" value="${basedir}/docs" />	

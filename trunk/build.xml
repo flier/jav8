@@ -188,8 +188,9 @@
 		<if>		
 			<equals arg1="${is_osx}" arg2="true" />
 			<then>
-				<echo>rename lib${project.name}.so to lib${project.name}.dylib for Mac OSX</echo>
+				<echo>rename lib${project.name}.so to lib${project.name}.dylib and lib${project.name}.jnilib for Mac OSX</echo>
 			    <move file="lib${project.name}.so" tofile="lib${project.name}.dylib" overwrite="yes" failonerror="no"/>
+			    <copy file="lib${project.name}.dylib" tofile="lib${project.name}.jnilib" overwrite="yes" failonerror="no"/>
 			</then>
 		</if>
 		
@@ -198,6 +199,7 @@
 			<fileset dir="${out.dir}" file="*.pdb"/>
 			<fileset dir="${out.dir}" file="*.so"/>
 			<fileset dir="${out.dir}" file="*.dylib"/>
+			<fileset dir="${out.dir}" file="*.jnilib"/>
 		</copy>
 	</target>
 	<target name="jar" depends="jni">
@@ -207,6 +209,7 @@
 			<include name="**/*.dll"/>
 			<include name="**/*.so"/>
 			<include name="**/*.dylib"/>
+			<include name="**/*.jnilib"/>
 			<include name="META-INF/**"/>
 		</jar>
 	</target>

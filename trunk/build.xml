@@ -103,7 +103,7 @@
         </else>
     </if>
 
-    <condition property="arch" value="x64" else="i32">
+    <condition property="arch" value="x64" else="ia32">
         <istrue value="${is_x64}"/>
     </condition>
 

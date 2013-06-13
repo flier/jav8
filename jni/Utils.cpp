@@ -31,11 +31,11 @@ namespace jni {
 #endif
 
 Cache& Cache::GetInstance(JNIEnv *env)
-{  
+{
 #ifdef __APPLE__
   if (!s_caches_key)
   {
-    pthread_key_create(&s_caches_key, NULL); 
+    pthread_key_create(&s_caches_key, NULL);
   }
 
   caches_t *s_caches = (caches_t *) pthread_getspecific(s_caches_key);
@@ -55,7 +55,7 @@ Cache& Cache::GetInstance(JNIEnv *env)
   Cache *cache = new Cache(env);
 
   s_caches->insert(std::make_pair(env, cache));
-  
+
   return *cache;
 }
 
@@ -75,14 +75,14 @@ void Cache::Clear(void)
     {
       m_env->DeleteGlobalRef(itField->second);
     }
-    
+
     for (methods_t::const_iterator itMethod = methods.begin(); itMethod != methods.end(); itMethod++)
     {
       CJavaFunction::ReleaseMethods(m_env, itMethod->second);
     }
   }
 
-  m_classes.clear();  
+  m_classes.clear();
   m_assignables.clear();
   m_fieldIDs.clear();
   m_methodIDs.clear();
@@ -95,7 +95,7 @@ jclass Cache::FindClass(const char *name)
 
   jclass clazz;
 
-  if (it != m_classes.end()) 
+  if (it != m_classes.end())
   {
     clazz = it->second;
   }
@@ -103,7 +103,7 @@ jclass Cache::FindClass(const char *name)
   {
     clazz = m_env->FindClass(name);
 
-    if (clazz) 
+    if (clazz)
     {
       clazz = (jclass) m_env->NewGlobalRef(clazz);
 
@@ -120,7 +120,7 @@ bool Cache::IsAssignableFrom(jclass sub, jclass sup)
   assignables_t::const_iterator iter = m_assignables.find(key);
 
   if (iter != m_assignables.end()) return iter->second;
-  
+
   bool assignable = m_env->IsAssignableFrom(sub, sup) == JNI_TRUE;
 
   m_assignables[key] = assignable;
@@ -218,7 +218,7 @@ void Cache::FillBuildIns(void)
 Cache::members_t::iterator Cache::CacheMembers(jclass clazz)
 {
   members_t::iterator iter;
-  
+
   for (iter = m_members.begin(); iter != m_members.end(); iter++)
   {
     if (m_env->IsSameObject(clazz, iter->first)) break;
@@ -280,7 +280,7 @@ v8::Handle<v8::Value> Cache::GetMember(jobject obj, const std::string& name)
       fields_t::const_iterator it = fields.find(name);
 
       if (it != fields.end()) {
-        static jmethodID mid = env.GetMethodID(buildins.java.lang.reflect.Field, "get", "(Ljava/lang/Object;)Ljava/lang/Object;");    
+        static jmethodID mid = env.GetMethodID(buildins.java.lang.reflect.Field, "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
 
         return env.Close(env.Wrap(env->CallObjectMethod(it->second, mid, obj)));
       }
@@ -311,7 +311,7 @@ v8::Handle<v8::Value> Cache::SetMember(jobject obj, const std::string& name, v8:
       fields_t::const_iterator it = fields.find(name);
 
       if (it != fields.end()) {
-        static jmethodID mid = env.GetMethodID(buildins.java.lang.reflect.Field, "set", "(Ljava/lang/Object;Ljava/lang/Object;)V");     
+        static jmethodID mid = env.GetMethodID(buildins.java.lang.reflect.Field, "set", "(Ljava/lang/Object;Ljava/lang/Object;)V");
 
         env->CallVoidMethod(it->second, mid, obj, env.Wrap(value));
 
@@ -387,7 +387,7 @@ const std::string Env::GetString(jstring str)
 
   const char *s = m_env->GetStringUTFChars(str, &iscopy);
   jsize len = m_env->GetStringUTFLength(str);
-  
+
   const std::string value(s, len);
 
   m_env->ReleaseStringUTFChars(str, s);
@@ -435,7 +435,7 @@ void Env::Throw(const char *type, const char *msg)
     Throw(exc, msg);
   }
   else
-  {    
+  {
     Throw("java/lang/NoClassDefFoundError", type);
   }
 }
@@ -475,8 +475,8 @@ bool Env::ThrowIf(const v8::TryCatch& try_catch)
             type = FindClass(SupportErrors[i].type);
             break;
           }
-        }        
-      }      
+        }
+      }
     }
 
     const std::string msg = Extract(try_catch);
@@ -513,7 +513,7 @@ const std::string Env::Extract(const v8::TryCatch& try_catch)
     }
 
     oss << " @ " << message->GetLineNumber() << " : " << message->GetStartColumn() << " ) ";
-    
+
     if (!message->GetSourceLine().IsEmpty() &&
         !message->GetSourceLine()->IsUndefined())
     {
@@ -544,29 +544,29 @@ jobjectArray Env::NewObjectArray(size_t size, const char *name, jobject init)
 jobject Env::NewBoolean(jboolean value)
 {
   static jmethodID cid = GetMethodID(buildins.java.lang.Boolean, "<init>", "(Z)V");
-  
-  return m_env->NewObject(buildins.java.lang.Boolean, cid, value);  
+
+  return m_env->NewObject(buildins.java.lang.Boolean, cid, value);
 }
 
 jobject Env::NewInt(jint value)
 {
   static jmethodID cid = GetMethodID(buildins.java.lang.Integer, "<init>", "(I)V");
-  
-  return m_env->NewObject(buildins.java.lang.Integer, cid, value);  
+
+  return m_env->NewObject(buildins.java.lang.Integer, cid, value);
 }
 
 jobject Env::NewLong(jlong value)
 {
   static jmethodID cid = GetMethodID(buildins.java.lang.Long, "<init>", "(J)V");
-  
+
   return m_env->NewObject(buildins.java.lang.Long, cid, value);
 }
 
 jobject Env::NewDouble(jdouble value)
 {
   static jmethodID cid = GetMethodID(buildins.java.lang.Double, "<init>", "(D)V");
-  
-  return m_env->NewObject(buildins.java.lang.Double, cid, value);  
+
+  return m_env->NewObject(buildins.java.lang.Double, cid, value);
 }
 
 jstring Env::NewString(v8::Handle<v8::String> str)
@@ -579,22 +579,22 @@ jobject Env::NewDate(v8::Handle<v8::Date> date)
   static jmethodID cid = GetMethodID(buildins.java.util.Date, "<init>", "(J)V");
 
   jlong value = floor(date->NumberValue());
-  return m_env->NewObject(buildins.java.util.Date, cid, value);  
+  return m_env->NewObject(buildins.java.util.Date, cid, value);
 }
 
 jobject Env::NewV8Object(v8::Handle<v8::Object> obj)
 {
   static jmethodID cid = GetMethodID(buildins.lu.flier.script.V8Object, "<init>", "(J)V");
 
-  jlong value = (jlong) *v8::Persistent<v8::Object>::New(obj);
-  return m_env->NewObject(buildins.lu.flier.script.V8Object, cid, value);  
+  jlong value = (jlong) *v8::Persistent<v8::Object>::New(v8::Isolate::GetCurrent(), obj);
+  return m_env->NewObject(buildins.lu.flier.script.V8Object, cid, value);
 }
 
 jobject Env::NewV8Array(v8::Handle<v8::Array> array)
 {
   static jmethodID cid = GetMethodID(buildins.lu.flier.script.V8Array, "<init>", "(J)V");
 
-  jlong value = (jlong) *v8::Persistent<v8::Array>::New(array);
+  jlong value = (jlong) *v8::Persistent<v8::Array>::New(v8::Isolate::GetCurrent(), array);
   return m_env->NewObject(buildins.lu.flier.script.V8Array, cid, value);
 }
 
@@ -602,22 +602,22 @@ jobject Env::NewV8Function(v8::Handle<v8::Function> func)
 {
   static jmethodID cid = GetMethodID(buildins.lu.flier.script.V8Function, "<init>", "(J)V");
 
-  jlong value = (jlong) *v8::Persistent<v8::Function>::New(func);
-  return m_env->NewObject(buildins.lu.flier.script.V8Function, cid, value);  
+  jlong value = (jlong) *v8::Persistent<v8::Function>::New(v8::Isolate::GetCurrent(), func);
+  return m_env->NewObject(buildins.lu.flier.script.V8Function, cid, value);
 }
 
 jobject Env::NewV8Context(v8::Handle<v8::Context> ctxt)
 {
   static jmethodID cid = GetMethodID(buildins.lu.flier.script.V8Context, "<init>", "(J)V");
 
-  jlong value = (jlong) *v8::Persistent<v8::Context>::New(ctxt);
-  return m_env->NewObject(buildins.lu.flier.script.V8Context, cid, value);  
+  jlong value = (jlong) *v8::Persistent<v8::Context>::New(v8::Isolate::GetCurrent(), ctxt);
+  return m_env->NewObject(buildins.lu.flier.script.V8Context, cid, value);
 }
 
 #ifdef V8_SUPPORT_ISOLATE
 
 void V8Isolate::ensureInIsolate() {
-  if (v8::Isolate::GetCurrent() == NULL) 
+  if (v8::Isolate::GetCurrent() == NULL)
   {
       v8::Isolate* isolate = v8::Isolate::New();
       isolate->Enter();
@@ -651,7 +651,7 @@ jobject V8Env::Wrap(v8::Handle<v8::Value> value)
   if (value->IsTrue()) return NewBoolean(JNI_TRUE);
   if (value->IsFalse()) return NewBoolean(JNI_FALSE);
 
-  if (value->IsInt32()) return NewInt(value->Int32Value());  
+  if (value->IsInt32()) return NewInt(value->Int32Value());
   if (value->IsUint32()) return NewLong(value->IntegerValue());
   if (value->IsString())
   {
@@ -697,14 +697,14 @@ jobjectArray V8Env::WrapArrayToNative(v8::Handle<v8::Value> obj)
   jobjectArray items = NewObjectArray(array->Length());
 
   for (size_t i=0; i<array->Length(); i++)
-  {      
+  {
     jobject item;
     v8::Handle<v8::Value> obj = array->Get(i);
 
-    if (obj->IsArray()) 
+    if (obj->IsArray())
     {
       item = WrapArrayToNative(obj);
-    } else 
+    } else
     {
       item = Wrap(obj);
     }
@@ -727,7 +727,7 @@ v8::Handle<v8::Value> V8Env::Wrap(jobject value)
 
   jclass clazz = m_env->GetObjectClass(value);
 
-  if (IsAssignableFrom(clazz, buildins.java.lang.String)) 
+  if (IsAssignableFrom(clazz, buildins.java.lang.String))
   {
     jstring str = (jstring) value;
     const char *p = m_env->GetStringUTFChars(str, NULL);
@@ -739,53 +739,53 @@ v8::Handle<v8::Value> V8Env::Wrap(jobject value)
   else if (IsAssignableFrom(clazz, buildins.java.lang.Long) ||
            IsAssignableFrom(clazz, buildins.java.lang.Integer) ||
            IsAssignableFrom(clazz, buildins.java.lang.Short) ||
-           IsAssignableFrom(clazz, buildins.java.lang.Byte)) 
+           IsAssignableFrom(clazz, buildins.java.lang.Byte))
   {
     static jmethodID mid = GetMethodID(buildins.java.lang.Number, "intValue", "()I");
 
     result = v8::Integer::New(m_env->CallIntMethod(value, mid));
   }
   else if (IsAssignableFrom(clazz, buildins.java.lang.Double) ||
-           IsAssignableFrom(clazz, buildins.java.lang.Float)) 
+           IsAssignableFrom(clazz, buildins.java.lang.Float))
   {
     static jmethodID mid = GetMethodID(buildins.java.lang.Number, "doubleValue", "()D");
 
     result = v8::Number::New(m_env->CallDoubleMethod(value, mid));
   }
-  else if (IsAssignableFrom(clazz, buildins.java.lang.Boolean)) 
+  else if (IsAssignableFrom(clazz, buildins.java.lang.Boolean))
   {
     static jmethodID mid = GetMethodID(buildins.java.lang.Boolean, "booleanValue", "()Z");
 
     result = v8::Boolean::New(m_env->CallBooleanMethod(value, mid));
-  }      
+  }
   else if (IsAssignableFrom(clazz, buildins.java.util.Date))
   {
     static jmethodID mid = GetMethodID(buildins.java.util.Date, "getTime", "()J");
 
     result = v8::Date::New(m_env->CallLongMethod(value, mid));
   }
-  else if (IsAssignableFrom(clazz, buildins.java.lang.reflect.Method)) 
+  else if (IsAssignableFrom(clazz, buildins.java.lang.reflect.Method))
   {
-    result = CJavaFunction::Wrap(m_env, value);  
-  } 
-  else if (IsAssignableFrom(clazz, buildins.lu.flier.script.V8Context)) 
+    result = CJavaFunction::Wrap(m_env, value);
+  }
+  else if (IsAssignableFrom(clazz, buildins.lu.flier.script.V8Context))
   {
-    result = CJavaContext::Wrap(m_env, value);  
-  } 
-  else if (IsAssignableFrom(clazz, buildins.lu.flier.script.V8Array)) 
+    result = CJavaContext::Wrap(m_env, value);
+  }
+  else if (IsAssignableFrom(clazz, buildins.lu.flier.script.V8Array))
   {
     static jfieldID fid = GetFieldID(buildins.lu.flier.script.V8Array, "obj", "J");
 
     result = v8::Handle<v8::Array>((v8::Array *) m_env->GetLongField(value, fid));
-  } 
-  else if (IsAssignableFrom(clazz, buildins.lu.flier.script.V8Object)) 
+  }
+  else if (IsAssignableFrom(clazz, buildins.lu.flier.script.V8Object))
   {
     static jfieldID fid = GetFieldID(buildins.lu.flier.script.V8Object, "obj", "J");
 
     result = v8::Handle<v8::Object>((v8::Object *) m_env->GetLongField(value, fid));
   }
-  else 
-  { 
+  else
+  {
     static jmethodID mid = GetMethodID(buildins.java.lang.Class, "isArray", "()Z");
 
     if (m_env->CallBooleanMethod(m_env->GetObjectClass(value), mid)) {
@@ -855,4 +855,4 @@ std::vector< v8::Handle<v8::Value> > V8Env::GetArray(jobjectArray array)
   return items;
 }
 
-} // namespace jni 
+} // namespace jni

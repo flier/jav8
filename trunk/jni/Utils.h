@@ -22,11 +22,6 @@
 #include <cmath>
 using std::isnan;
 
-#ifndef isfinite
-# include <limits>
-# define isfinite(val) (val <= std::numeric_limits<double>::max())
-#endif
-
 #include <strings.h>
 #define strnicmp strncasecmp
 
@@ -36,6 +31,11 @@ using std::isnan;
 
 #ifdef __APPLE__
 # include <pthread.h>
+#else
+# include <limits>
+namespace std {
+  int isfinite(val) { return val <= std::numeric_limits<double>::max(); }
+}
 #endif
 
 namespace jni {
@@ -71,7 +71,7 @@ class Cache
 
 #ifdef _MSC_VER
   __declspec( thread ) static caches_t *s_caches;
-#else 
+#else
 # ifdef __APPLE__
   static pthread_key_t s_caches_key;
 # else
@@ -111,7 +111,7 @@ public:
   jmethodID GetStaticMethodID(jclass clazz, const char * name, const char *sig)
   {
     return InternalGetMethodID(clazz, true, name, sig);
-  }  
+  }
 
   v8::Handle<v8::Value> GetMember(jobject obj, const std::string& name);
   v8::Handle<v8::Value> SetMember(jobject obj, const std::string& name, v8::Handle<v8::Value> value);
@@ -156,7 +156,7 @@ public:
       } flier;
     } lu;
   };
-  
+
   buildins_t buildins;
 };
 
@@ -164,7 +164,7 @@ class Env
 {
 protected:
   JNIEnv *m_env;
-  
+
   const std::string Extract(const v8::TryCatch& try_catch);
 public:
   Env(JNIEnv *env) : m_env(env), buildins(Cache::GetInstance(env).buildins) {}
@@ -177,8 +177,8 @@ public:
 
   const std::string GetString(jstring str);
 
-  jclass FindClass(const char *name) {     
-    return Cache::GetInstance(m_env).FindClass(name); 
+  jclass FindClass(const char *name) {
+    return Cache::GetInstance(m_env).FindClass(name);
   }
 
   jfieldID GetFieldID(jclass clazz, const char * name, const char *sig) {
@@ -195,14 +195,14 @@ public:
     return Cache::GetInstance(m_env).GetStaticFieldID(FindClass(clazz), name, sig);
   }
 
-  jmethodID GetMethodID(jclass clazz, const char * name, const char *sig) {    
+  jmethodID GetMethodID(jclass clazz, const char * name, const char *sig) {
     return Cache::GetInstance(m_env).GetMethodID(clazz, name, sig);
   }
   jmethodID GetMethodID(const char * clazz, const char * name, const char *sig) {
     return GetMethodID(FindClass(clazz), name, sig);
   }
 
-  jmethodID GetStaticMethodID(jclass clazz, const char * name, const char *sig) {    
+  jmethodID GetStaticMethodID(jclass clazz, const char * name, const char *sig) {
     return Cache::GetInstance(m_env).GetStaticMethodID(clazz, name, sig);
   }
   jmethodID GetStaticMethodID(const char * clazz, const char * name, const char *sig) {
@@ -240,10 +240,10 @@ public:
   {
     return Cache::GetInstance(m_env).GetMembers(obj);
   }
-  
+
   jobject NewObject(const char *name, const char *sig = "()V", ...);
   jobjectArray NewObjectArray(size_t size, const char *name = "java/lang/Object", jobject init = NULL);
-  
+
   jobject NewBoolean(jboolean value);
   jobject NewInt(jint value);
   jobject NewLong(jlong value);
@@ -261,16 +261,16 @@ public:
 };
 
 class V8Isolate {
-  public: 
+  public:
     static bool IsAlive();
     static void ensureInIsolate();
 };
 
 class V8Env : public Env, public V8Isolate {
-  v8::HandleScope handle_scope;  
+  v8::HandleScope handle_scope;
   v8::TryCatch try_catch;
 public:
-  V8Env(JNIEnv *env) : Env(env) 
+  V8Env(JNIEnv *env) : Env(env)
   {
   }
   virtual ~V8Env() { ThrowIf(try_catch); }
@@ -278,7 +278,7 @@ public:
   bool HasCaught() const { return try_catch.HasCaught(); }
 
   std::vector< v8::Handle<v8::Value> > GetArray(jobjectArray array);
-  
+
   jobject Wrap(v8::Handle<v8::Value> value);
   jobject Wrap(v8::Handle<v8::Object> value);
   jobjectArray WrapArrayToNative(v8::Handle<v8::Value> obj);

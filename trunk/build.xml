@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="jav8" default="dist" basedir=".">
 	<property environment="env"/>
-	
+
 	<property name="project.name" value="jav8"/>
-	
+
 	<property name="src.dir" value="${basedir}/src" />
-	<property name="docs.dir" value="${basedir}/docs" />	
-	<property name="test.dir" value="${basedir}/test" />	
+	<property name="docs.dir" value="${basedir}/docs" />
+	<property name="test.dir" value="${basedir}/test" />
 	<property name="out.dir" value="${basedir}/build" />
 	<property name="classes.dir" value="${out.dir}/classes" />
 	<property name="test.classes.dir" value="${out.dir}/test-classes" />
 	<property name="test.report.dir" value="${out.dir}/test-report" />
-	<property name="obj.dir" value="${out.dir}/objs" />	
+	<property name="obj.dir" value="${out.dir}/objs" />
 	<property name="bin.dir" value="${out.dir}/bin/${project.mode}" />
 	<property name="jni.dir" value="${basedir}/jni" />
 	<property name="dist.dir" value="${basedir}/dist" />
 	<property name="lib.dir" value="${basedir}/lib" />
 	<property name="junit4.path" value="${lib.dir}/junit-4.9b3.jar" />
-	
+
 	<property file="build.properties" />
-	
+
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
 	    <classpath>
 	        <pathelement location="${lib.dir}/ant-contrib-1.0b3.jar" />
@@ -30,18 +30,18 @@
 	        <pathelement location="${lib.dir}/cpptasks-1.0b5.jar" />
 	    </classpath>
 	</taskdef>
-	    	
+
 	<condition property="is_win">
 		<os family="windows" />
 	</condition>
 	<condition property="is_unix">
 		<os family="unix" />
-	</condition>		
+	</condition>
 	<condition property="is_osx">
 		<or>
 			<os name="Mac OS X" />
 			<os name="darwin" />
-		</or>	
+		</or>
 	</condition>
 	<condition property="is_x64">
 	    <or>
@@ -52,7 +52,7 @@
 	<condition property="is_debug">
 		<equals arg1="${project.mode}" arg2="debug"/>
 	</condition>
-	
+
 	<if>
 		<istrue value="${is_win}"/>
 		<then>
@@ -64,7 +64,7 @@
 	</if>
 	<condition property="cc.compiler" value="msvc" else="gcc">
 		<istrue value="${is_win}"/>
-	</condition>	
+	</condition>
 	<condition property="link.incremental">
 		<istrue value="${is_win}"/>
 	</condition>
@@ -80,8 +80,8 @@
 	<condition property="link.static_runtime">
 		<isfalse value="${is_x64}"/>
 	</condition>
-			
-    <if>        
+
+    <if>
         <equals arg1="${is_osx}" arg2="true" />
         <then>
         	<property name="jar.file" value="${dist.dir}/${project.name}-jsr223-${os.name}-${os.arch}-${project.version}.jar" />
@@ -90,21 +90,21 @@
             <property name="jar.file" value="${dist.dir}/${project.name}-jsr223-${os.family}-${os.arch}-${project.version}.jar" />
         </else>
     </if>
-    
-    <property name="libv8" value="v8_base,v8_snapshot" />
-    
+
     <condition property="arch" value="x64" else="i32">
         <istrue value="${is_x64}"/>
     </condition>
-    
+
+    <property name="libv8" value="v8_base.${arch},v8_snapshot" />
+
     <property name="libv8.path" value="${env.V8_HOME}/out/${arch}.${project.mode}"/>
-    
+
 	<path id="build.classpath">
 		<fileset dir="${lib.dir}">
 			<include name="**/*.jar" />
 		</fileset>
 	</path>
-	
+
 	<target name="clean">
 		<delete dir="${out.dir}" />
 		<delete dir="${docs.dir}" />
@@ -118,10 +118,10 @@
                         <classpath refid="build.classpath"/>
 			<include name="**/*.java"/>
 		</javac>
-		<copy todir="${classes.dir}/META-INF">		
+		<copy todir="${classes.dir}/META-INF">
 			<fileset dir="${src.dir}/META-INF" />
 		</copy>
-	</target>	
+	</target>
 	<target name="docs" depends="compile">
 		<mkdir dir="${docs.dir}"/>
 		<javadoc packagenames="lu.flier" sourcepath="${src.dir}" destdir="${docs.dir}">
@@ -130,41 +130,41 @@
 				<exclude name="META-INF/**" />
 			</fileset>
 		</javadoc>
-	</target>	
+	</target>
 	<target name="jni" depends="compile">
 		<echo>Generating JNI header ...</echo>
-		<mkdir dir="${jni.dir}"/>		
+		<mkdir dir="${jni.dir}"/>
 		<javah classpath="${classes.dir}" outputfile="${jni.dir}/jav8.h">
 			<class name="lu.flier.script.ManagedV8Object"/>
 			<class name="lu.flier.script.V8ScriptEngineFactory"/>
 			<class name="lu.flier.script.V8ScriptEngine"/>
-			<class name="lu.flier.script.V8CompiledScript"/>			
+			<class name="lu.flier.script.V8CompiledScript"/>
 			<class name="lu.flier.script.V8Context"/>
 			<class name="lu.flier.script.V8Object"/>
 			<class name="lu.flier.script.V8Array"/>
 			<class name="lu.flier.script.V8Function"/>
 		</javah>
-		
+
 		<echo>Building JNI library with ${project.mode} mode ...</echo>
 		<cc name="${cc.compiler}"
-			objdir="${bin.dir}" outfile="${project.name}" 
-			runtime="${link.static_runtime}" link="static" outtype="shared" 
+			objdir="${bin.dir}" outfile="${project.name}"
+			runtime="${link.static_runtime}" link="static" outtype="shared"
 			multithreaded="true" optimize="speed" incremental="${link.incremental}"
-			debug="${is_debug}" exceptions="true" rtti="true">		
-			
-			<fileset dir="${jni.dir}" includes="*.cpp"/>			
+			debug="${is_debug}" exceptions="true" rtti="true">
+
+			<fileset dir="${jni.dir}" includes="*.cpp"/>
 
 			<compilerarg value="-DWIN32" if="is_win"/>
 			<compilerarg value="/GL" if="is_win"/>
 			<compilerarg value="/EHsc" if="is_win"/>
 			<compilerarg value="-fPIC" if="is_x64"/>
-			
-			<linkerarg value="/INCREMENTAL" if="is_win"/>		
+
+			<linkerarg value="/INCREMENTAL" if="is_win"/>
 			<linkerarg value="-fPIC" if="is_x64"/>
-			
+
 			<includepath>
 				<path>
-					<pathelement path="${env.JAVA_HOME}/include"/>							
+					<pathelement path="${env.JAVA_HOME}/include"/>
 					<pathelement path="${env.JAVA_HOME}/include/win32"/>
           			<pathelement path="${env.JAVA_HOME}/include/linux"/>
 					<pathelement path="${env.JAVA_HOME}/include/darwin"/>
@@ -174,18 +174,18 @@
 					<pathelement path="${env.V8_HOME}/src"/>
 				</path>
 			</includepath>
-			
+
 			<libset libs="winmm,ws2_32" if="is_win"/>
 			<libset libs="stdc++" if="is_unix"/>
 			<libset dir="${libv8.path}" libs="${libv8}"/>
 		</cc>
-		
+
 		<!--
 		Core Java APIs and the Java Runtime on Mac OS X
-		
+
 		http://developer.apple.com/library/mac/#documentation/java/conceptual/java14development/05-corejavaapis/corejavaapis.html
 		-->
-		<if>		
+		<if>
 			<equals arg1="${is_osx}" arg2="true" />
 			<then>
 				<echo>rename lib${project.name}.so to lib${project.name}.dylib and lib${project.name}.jnilib for Mac OSX</echo>
@@ -193,7 +193,7 @@
 			    <copy file="lib${project.name}.dylib" tofile="lib${project.name}.jnilib" overwrite="yes" failonerror="no"/>
 			</then>
 		</if>
-		
+
 		<copy todir="${classes.dir}">
 			<fileset dir="${out.dir}" file="*.dll"/>
 			<fileset dir="${out.dir}" file="*.pdb"/>
@@ -216,10 +216,10 @@
 	<target name="test" depends="jar">
 		<mkdir dir="${test.classes.dir}"/>
 		<mkdir dir="${test.report.dir}"/>
-		<javac srcdir="${test.dir}" destdir="${test.classes.dir}" 
+		<javac srcdir="${test.dir}" destdir="${test.classes.dir}"
 			includeantruntime="false" classpath="${junit4.path};${jar.file}">
 			<include name="**/*.java"/>
-		</javac>				
+		</javac>
 		<junit printsummary="yes" haltonfailure="yes" fork="yes">
 			<jvmarg value="-Djava.library.path=${basedir}" />
 			<formatter type="plain" usefile="false" />
@@ -228,14 +228,14 @@
 			<classpath>
 				<pathelement location="${jar.file}" />
 				<pathelement location="${test.classes.dir}" />
-				<pathelement location="${junit4.path}" />							
+				<pathelement location="${junit4.path}" />
 				<pathelement path="${java.class.path}" />
 			</classpath>
 		</junit>
 	</target>
 	<target name="dist" depends="test, docs">
 		<tar destfile="${dist.dir}/jav8-${project.version}-apidocs.tar.gz" basedir="${docs.dir}" compression="gzip"/>
-		
+
 		<tar destfile="${dist.dir}/jav8-${project.version}-src.tar.gz" compression="gzip">
 			<tarfileset dir="${basedir}">
 				<include name="build.xml"/>
@@ -250,11 +250,11 @@
 				<include name="jni/*.h"/>
 				<include name="jni/*.cpp"/>
 				<include name="jni/jav8.vcxproj*"/>
-				<include name="test/**/*.java"/>				
+				<include name="test/**/*.java"/>
 				<include name="lib/*.jar"/>
 			</tarfileset>
 		</tar>
-	</target>	
+	</target>
 	<target name="pause">
 		<echo>Press Enter to continue ...</echo>
 		<input/>
@@ -268,23 +268,23 @@
 		<echo>gdb java -x gdb.cmds</echo>
 	</target>
 	<target name="jdb">
-		<!-- 
-		
+		<!--
+
 		jdb - The Java Debugger
-		
-		http://docs.oracle.com/javase/7/docs/technotes/tools/solaris/jdb.html 
-		
+
+		http://docs.oracle.com/javase/7/docs/technotes/tools/solaris/jdb.html
+
 		$>ant jdb
 		...
 		[junit] Listening for transport dt_socket at address: <port>
 		...
-		
+
 		$>jdb -connect com.sun.jdi.SocketAttach:port=<port>
-		
+
 		-->
-        <junit printsummary="yes" haltonfailure="yes" fork="yes">            
+        <junit printsummary="yes" haltonfailure="yes" fork="yes">
         	<jvmarg value="-Xdebug"/>
-        	<jvmarg value="-Xnoagent"/>        	
+        	<jvmarg value="-Xnoagent"/>
         	<jvmarg value="-Xrunjdwp:transport=dt_socket,server=y,suspend=y"/>
         	<jvmarg value="-verbose:jni"/>
         	<jvmarg value="-Djava.compiler=none"/>
@@ -295,9 +295,9 @@
             <classpath>
                 <pathelement location="${jar.file}" />
                 <pathelement location="${test.classes.dir}" />
-                <pathelement location="${junit4.path}" />                           
+                <pathelement location="${junit4.path}" />
                 <pathelement path="${java.class.path}" />
             </classpath>
-        </junit>		
+        </junit>
 	</target>
 </project>

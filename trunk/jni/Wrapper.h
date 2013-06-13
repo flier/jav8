@@ -30,17 +30,19 @@ class ObjectTracer
     m_handle.MakeWeak(this, WeakCallback);
   }
 
-  static void WeakCallback(v8::Persistent<v8::Value> value, void* parameter)
+  static void WeakCallback(v8::Isolate *isolate, v8::Persistent<v8::Value> *value, ObjectTracer<T> *parameter)
   {
-    assert(value.IsNearDeath());
+    assert(value->IsNearDeath());
 
-    std::auto_ptr<ObjectTracer> tracer(static_cast<ObjectTracer *>(parameter));
+    ObjectTracer<T> *tracer = parameter;
 
-    assert(value == tracer->m_handle);
+    assert(*value == tracer->m_handle);
+
+    delete tracer;
   }
 public:
   ObjectTracer(v8::Handle<v8::Value> handle, T *object)
-    : m_handle(v8::Persistent<v8::Value>::New(handle)), m_object(object)
+    : m_handle(v8::Persistent<v8::Value>::New(v8::Isolate::GetCurrent(), handle)), m_object(object)
   {
 
   }
@@ -67,19 +69,19 @@ public:
     return *tracer;
   }
 };
-    
-class CManagedObject 
+
+class CManagedObject
 {
 protected:
   JNIEnv *m_pEnv;
   jobject m_obj;
 
-  CManagedObject(JNIEnv *pEnv, jobject obj) 
-    : m_pEnv(pEnv), m_obj(m_pEnv->NewGlobalRef(obj)) 
+  CManagedObject(JNIEnv *pEnv, jobject obj)
+    : m_pEnv(pEnv), m_obj(m_pEnv->NewGlobalRef(obj))
   {
   }
 public:
-  virtual ~CManagedObject(void) 
+  virtual ~CManagedObject(void)
   {
     m_pEnv->DeleteGlobalRef(m_obj);
   }
@@ -92,7 +94,7 @@ public:
     return !obj.IsEmpty() && obj->InternalFieldCount() == 1;
   }
 
-  static CManagedObject& Unwrap(v8::Handle<v8::Object> obj) 
+  static CManagedObject& Unwrap(v8::Handle<v8::Object> obj)
   {
     v8::HandleScope handle_scope;
 
@@ -136,7 +138,7 @@ protected:
   static v8::Handle<v8::Array> IndexedEnumerator(const v8::AccessorInfo& info)
   { return v8::Handle<v8::Array>(); }
 
-  static v8::Handle<v8::Value> Caller(const v8::Arguments& args) 
+  static v8::Handle<v8::Value> Caller(const v8::Arguments& args)
   { return v8::Handle<v8::Value>(); }
 private:
   static void SetupObjectTemplate(v8::Handle<v8::ObjectTemplate> clazz)
@@ -155,7 +157,7 @@ private:
 
     SetupObjectTemplate(clazz);
 
-    return v8::Persistent<v8::ObjectTemplate>::New(clazz);
+    return v8::Persistent<v8::ObjectTemplate>::New(v8::Isolate::GetCurrent(), clazz);
   }
 protected:
   static v8::Handle<v8::Object> InternalWrap(T *obj)
@@ -185,12 +187,12 @@ protected:
     static v8::Persistent<v8::ObjectTemplate> s_template(CreateObjectTemplate());
 #else
 	static __thread v8::ObjectTemplate *s_template = NULL;
-	
+
 	if (!s_template) s_template = *CreateObjectTemplate();
 #endif
 #endif
 
-    v8::Handle<v8::Object> instance = s_template->NewInstance();    
+    v8::Handle<v8::Object> instance = s_template->NewInstance();
 
     ObjectTracer<T>::Trace(instance, obj);
 
@@ -199,7 +201,7 @@ protected:
     return handle_scope.Close(instance);
   }
 public:
-  CBaseJavaObject(JNIEnv *pEnv, jobject obj) : __base__(pEnv, obj) 
+  CBaseJavaObject(JNIEnv *pEnv, jobject obj) : __base__(pEnv, obj)
   {
 
   }
@@ -211,7 +213,7 @@ public:
     return handle_scope.Close(InternalWrap(new T(pEnv, obj)));
   }
 
-  static T& Unwrap(v8::Handle<v8::Object> obj) 
+  static T& Unwrap(v8::Handle<v8::Object> obj)
   {
     return static_cast<T&>(__base__::Unwrap(obj));
   }
@@ -220,16 +222,16 @@ public:
 class CJavaObject : public CBaseJavaObject<CJavaObject> {
   typedef CBaseJavaObject<CJavaObject> __base__;
 public:
-  CJavaObject(JNIEnv *pEnv, jobject obj) : __base__(pEnv, obj) {    
+  CJavaObject(JNIEnv *pEnv, jobject obj) : __base__(pEnv, obj) {
   }
-  
+
   static v8::Handle<v8::Value> NamedGetter(
     v8::Local<v8::String> prop, const v8::AccessorInfo& info);
   static v8::Handle<v8::Value> NamedSetter(
     v8::Local<v8::String> prop, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
   static v8::Handle<v8::Integer> NamedQuery(
     v8::Local<v8::String> prop, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Array> NamedEnumerator(const v8::AccessorInfo& info);    
+  static v8::Handle<v8::Array> NamedEnumerator(const v8::AccessorInfo& info);
 };
 
 class CJavaArray : public CBaseJavaObject<CJavaArray> {
@@ -244,7 +246,7 @@ public:
     v8::Local<v8::String> prop, const v8::AccessorInfo& info);
   static v8::Handle<v8::Integer> NamedQuery(
     v8::Local<v8::String> prop, const v8::AccessorInfo& info);
-  
+
   static v8::Handle<v8::Value> IndexedGetter(
     uint32_t index, const v8::AccessorInfo& info);
   static v8::Handle<v8::Value> IndexedSetter(
@@ -254,7 +256,7 @@ public:
   static v8::Handle<v8::Array> IndexedEnumerator(const v8::AccessorInfo& info);
 };
 
-class CJavaFunction {  
+class CJavaFunction {
   typedef std::vector<jclass> types_t;
   typedef std::pair<jobject, types_t> method_t;
   typedef std::vector<method_t> methods_t;
@@ -265,7 +267,7 @@ class CJavaFunction {
   bool CanConvert(jclass clazz, v8::Handle<v8::Value> value);
 public:
   CJavaFunction(JNIEnv *pEnv, jobject obj);
-  CJavaFunction(JNIEnv *pEnv, const methods_t& methods) 
+  CJavaFunction(JNIEnv *pEnv, const methods_t& methods)
     : m_pEnv(pEnv), m_methods(methods)
   {
   }
@@ -285,7 +287,7 @@ public:
   {
     jni::V8Env env(pEnv);
 
-    v8::Handle<v8::FunctionTemplate> func_tmpl = v8::FunctionTemplate::New();    
+    v8::Handle<v8::FunctionTemplate> func_tmpl = v8::FunctionTemplate::New();
 
     CJavaFunction *func = new CJavaFunction(pEnv, methods);
 
@@ -300,7 +302,7 @@ public:
   static v8::Handle<v8::Value> Caller(const v8::Arguments& args);
 };
 
-class CJavaBoundMethod {  
+class CJavaBoundMethod {
   JNIEnv *m_pEnv;
   jobject m_thiz;
   jmethodID m_mid;
@@ -309,7 +311,7 @@ class CJavaBoundMethod {
 
   bool CanConvert(jclass clazz, v8::Handle<v8::Value> value);
 public:
-  CJavaBoundMethod(JNIEnv *pEnv, jobject thiz, jmethodID mid, bool is_void, bool has_args) 
+  CJavaBoundMethod(JNIEnv *pEnv, jobject thiz, jmethodID mid, bool is_void, bool has_args)
     : m_pEnv(pEnv), m_thiz(m_pEnv->NewGlobalRef(thiz)), m_mid(mid), m_is_void(is_void), m_has_args(has_args)
   {
   }
@@ -329,7 +331,7 @@ public:
   {
     jni::V8Env env(pEnv);
 
-    v8::Handle<v8::FunctionTemplate> func_tmpl = v8::FunctionTemplate::New();    
+    v8::Handle<v8::FunctionTemplate> func_tmpl = v8::FunctionTemplate::New();
 
     CJavaBoundMethod *func = new CJavaBoundMethod(pEnv, thiz, mid, is_void, has_args);
 
@@ -361,7 +363,7 @@ public:
     v8::Local<v8::String> prop, const v8::AccessorInfo& info);
   static v8::Handle<v8::Boolean> NamedDeleter(
     v8::Local<v8::String> prop, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Array> NamedEnumerator(const v8::AccessorInfo& info);  
+  static v8::Handle<v8::Array> NamedEnumerator(const v8::AccessorInfo& info);
   */
 };
 

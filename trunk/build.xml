@@ -34,6 +34,18 @@
 	<condition property="is_win">
 		<os family="windows" />
 	</condition>
+	<condition property="is_win32">
+		<and>
+			<os family="windows" />
+			<equals arg1="${os.arch}" arg2="i386"/>
+		</and>
+	</condition>
+	<condition property="is_win64">
+		<and>
+			<os family="windows" />
+			<equals arg1="${os.arch}" arg2="amd64"/>
+		</and>
+	</condition>
 	<condition property="is_unix">
 		<os family="unix" />
 	</condition>
@@ -97,8 +109,16 @@
 
     <property name="libv8" value="v8_base.${arch},v8_snapshot" />
 
-    <property name="libv8.path" value="${env.V8_HOME}/out/${arch}.${project.mode}"/>
-
+    <if>
+    	<istrue value="${is_win}"/>
+    	<then>
+    		<property name="libv8.path" value="${env.V8_HOME}\build\${project.mode}\lib"/>
+    	</then>
+    	<else>
+    		<property name="libv8.path" value="${env.V8_HOME}/out/${arch}.${project.mode}"/>
+    	</else>
+   	</if>
+    
 	<path id="build.classpath">
 		<fileset dir="${lib.dir}">
 			<include name="**/*.jar" />
@@ -146,6 +166,7 @@
 		</javah>
 
 		<echo>Building JNI library with ${project.mode} mode ...</echo>
+		<echo>linking V8 static library ${libv8} at ${libv8.path}</echo>
 		<cc name="${cc.compiler}"
 			objdir="${bin.dir}" outfile="${project.name}"
 			runtime="${link.static_runtime}" link="static" outtype="shared"
@@ -158,8 +179,8 @@
 			<compilerarg value="/GL" if="is_win"/>
 			<compilerarg value="/EHsc" if="is_win"/>
 			<compilerarg value="-fPIC" if="is_x64"/>
-
-			<linkerarg value="/INCREMENTAL" if="is_win"/>
+			<linkerarg value="/INCREMENTAL" if="is_win"/>	
+			<linkerarg value="/MACHINE:X64" if="is_win64"/>
 			<linkerarg value="-fPIC" if="is_x64"/>
 
 			<includepath>

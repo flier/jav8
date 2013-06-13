@@ -34,7 +34,7 @@ using std::isnan;
 #else
 # include <limits>
 namespace std {
-  int isfinite(val) { return val <= std::numeric_limits<double>::max(); }
+  static inline int isfinite(double val) { return val <= std::numeric_limits<double>::max(); }
 }
 #endif
 

@@ -115,10 +115,18 @@
     		<property name="libv8.path" value="${env.V8_HOME}\build\${project.mode}\lib"/>
     	</then>
     	<else>
-    		<property name="libv8.path" value="${env.V8_HOME}/out/${arch}.${project.mode}"/>
+    		<if>
+    			<istrue value="${is_osx}"/>
+    			<then>
+    				<property name="libv8.path" value="${env.V8_HOME}/out/${arch}.${project.mode}"/>
+    			</then>
+    			<else>
+    				<property name="libv8.path" value="${env.V8_HOME}/out/${arch}.${project.mode}/obj.target/tools/gyp/"/>
+    			</else>
+    		</if>
     	</else>
    	</if>
-    
+
 	<path id="build.classpath">
 		<fileset dir="${lib.dir}">
 			<include name="**/*.jar" />
@@ -179,7 +187,7 @@
 			<compilerarg value="/GL" if="is_win"/>
 			<compilerarg value="/EHsc" if="is_win"/>
 			<compilerarg value="-fPIC" if="is_x64"/>
-			<linkerarg value="/INCREMENTAL" if="is_win"/>	
+			<linkerarg value="/INCREMENTAL" if="is_win"/>
 			<linkerarg value="/MACHINE:X64" if="is_win64"/>
 			<linkerarg value="-fPIC" if="is_x64"/>
 
@@ -187,7 +195,7 @@
 				<path>
 					<pathelement path="${env.JAVA_HOME}/include"/>
 					<pathelement path="${env.JAVA_HOME}/include/win32"/>
-          			<pathelement path="${env.JAVA_HOME}/include/linux"/>
+          <pathelement path="${env.JAVA_HOME}/include/linux"/>
 					<pathelement path="${env.JAVA_HOME}/include/darwin"/>
 					<pathelement path="/System/Library/Frameworks/JavaVM.framework/Headers/"/>
 					<pathelement path="${env.V8_HOME}"/>

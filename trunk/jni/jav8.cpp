@@ -546,6 +546,8 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8Array_internalSet
   v8::Persistent<v8::Array> array((v8::Array *)pArray);
 
   array->Set(index, env.Wrap(element));
+
+  return element;
 }
 
 JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetElements
@@ -943,6 +945,8 @@ JNIEXPORT jintArray JNICALL Java_lu_flier_script_V8Array_internalToIntArray
   }
 
   pEnv->ReleasePrimitiveArrayCritical(buf, data, 0);
+
+  return buf;
 }
 
 JNIEXPORT jlongArray JNICALL Java_lu_flier_script_V8Array_internalToLongArray
@@ -963,6 +967,8 @@ JNIEXPORT jlongArray JNICALL Java_lu_flier_script_V8Array_internalToLongArray
   }
 
   pEnv->ReleasePrimitiveArrayCritical(buf, data, 0);
+
+  return buf;
 }
 
 JNIEXPORT jshortArray JNICALL Java_lu_flier_script_V8Array_internalToShortArray
@@ -983,6 +989,8 @@ JNIEXPORT jshortArray JNICALL Java_lu_flier_script_V8Array_internalToShortArray
   }
 
   pEnv->ReleasePrimitiveArrayCritical(buf, data, 0);
+
+  return buf;
 }
 
 JNIEXPORT jdoubleArray JNICALL Java_lu_flier_script_V8Array_internalToDoubleArray
@@ -1003,6 +1011,8 @@ JNIEXPORT jdoubleArray JNICALL Java_lu_flier_script_V8Array_internalToDoubleArra
   }
 
   pEnv->ReleasePrimitiveArrayCritical(buf, data, 0);
+
+  return buf;
 }
 
 JNIEXPORT jfloatArray JNICALL Java_lu_flier_script_V8Array_internalToFloatArray
@@ -1023,6 +1033,8 @@ JNIEXPORT jfloatArray JNICALL Java_lu_flier_script_V8Array_internalToFloatArray
   }
 
   pEnv->ReleasePrimitiveArrayCritical(buf, data, 0);
+
+  return buf;
 }
 
 JNIEXPORT jbooleanArray JNICALL Java_lu_flier_script_V8Array_internalToBooleanArray
@@ -1041,6 +1053,8 @@ JNIEXPORT jbooleanArray JNICALL Java_lu_flier_script_V8Array_internalToBooleanAr
   }
 
   pEnv->ReleasePrimitiveArrayCritical(buf, data, 0);
+
+  return buf;
 }
 
 JNIEXPORT jobjectArray JNICALL Java_lu_flier_script_V8Array_internalToStringArray
@@ -1059,6 +1073,8 @@ JNIEXPORT jobjectArray JNICALL Java_lu_flier_script_V8Array_internalToStringArra
       pEnv->SetObjectArrayElement(dest, i, pEnv->NewStringUTF(*str));
     }
   }
+
+  return dest;
 }
 
 JNIEXPORT jobjectArray JNICALL Java_lu_flier_script_V8Array_internalToDateArray
@@ -1076,6 +1092,8 @@ JNIEXPORT jobjectArray JNICALL Java_lu_flier_script_V8Array_internalToDateArray
       pEnv->SetObjectArrayElement(dest, i, env.NewDate(v8::Handle<v8::Date>::Cast(value)));
     }
   }
+
+  return dest;
 }
 
 jint JNICALL Java_lu_flier_script_V8Array_internalGetSize

@@ -247,7 +247,12 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8Context_internalCreateArray
 
   for (size_t i = 0; i < length; i++) {
       jobject item = pEnv->GetObjectArrayElement(source, i);
-      array->Set(i, env.Wrap(item));
+
+      if (item) {
+        array->Set(i, env.Wrap(item));
+
+        pEnv->DeleteLocalRef(item);
+      }
   }
 
   handleScope.Close(array);
@@ -451,9 +456,14 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8Context_internalCreateStringArr
     } else {
       int length = pEnv->GetStringUTFLength(str);
       const jchar *p = pEnv->GetStringCritical(str, NULL);
+
       v8::Handle<v8::String> next = v8::String::New((const uint16_t *)p, length);
+
       pEnv->ReleaseStringCritical(str, p);
+
       array->Set(i, next);
+
+      pEnv->DeleteLocalRef(str);
     }
   }
 
@@ -474,6 +484,8 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8Context_internalCreateDateArray
       array->Set(i, nullValue);
     } else {
       array->Set(i, env.WrapDate(jdate));
+
+      pEnv->DeleteLocalRef(jdate);
     }
   }
 
@@ -494,6 +506,8 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8Context_internalCreateV8ArrayAr
       array->Set(i, nullValue);
     } else {
       array->Set(i, env.WrapV8Array(jarr));
+
+      pEnv->DeleteLocalRef(jarr);
     }
   }
 
@@ -514,6 +528,8 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8Context_internalCreateV8ObjectA
       array->Set(i, nullValue);
     } else {
       array->Set(i, env.WrapV8Object(jobj));
+
+      pEnv->DeleteLocalRef(jobj);
     }
   }
 
@@ -559,7 +575,12 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetElements
 
   for (size_t i = 0; i < length; i++) {
       jobject item = pEnv->GetObjectArrayElement(elements, i);
-      array->Set(i, env.Wrap(item));
+
+      if (item) {
+        array->Set(i, env.Wrap(item));
+
+        pEnv->DeleteLocalRef(item);
+      }
   }
 }
 
@@ -740,6 +761,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetDateElements
       array->Set(i, nullValue);
     } else {
       array->Set(i, env.WrapDate(jdate));
+
+      pEnv->DeleteLocalRef(jdate);
     }
   }
 }
@@ -758,6 +781,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetV8ArrayElements
       array->Set(i, nullValue);
     } else {
       array->Set(i, env.WrapV8Array(jarr));
+
+      pEnv->DeleteLocalRef(jarr);
     }
   }
 }
@@ -776,6 +801,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetV8ObjectElements
       array->Set(i, nullValue);
     } else {
       array->Set(i, env.WrapV8Object(jobj));
+
+      pEnv->DeleteLocalRef(jobj);
     }
   }
 }
@@ -797,6 +824,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetStringElements
       v8::Handle<v8::String> next = v8::String::New((const uint16_t *)p, length);
       pEnv->ReleaseStringCritical(str, p);
       array->Set(i, next);
+
+      pEnv->DeleteLocalRef(str);
     }
   }
 }

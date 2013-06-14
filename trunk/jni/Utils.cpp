@@ -798,6 +798,8 @@ v8::Handle<v8::Value> V8Env::Wrap(jobject value)
         jobject item = m_env->GetObjectArrayElement((jobjectArray) value, i);
 
         items->Set(i, Wrap(item));
+
+        m_env->DeleteLocalRef(item);
       }
 
       result = items;
@@ -849,7 +851,11 @@ std::vector< v8::Handle<v8::Value> > V8Env::GetArray(jobjectArray array)
 
   for (size_t i=0; i<items.size(); i++)
   {
-    items[i] = Wrap(m_env->GetObjectArrayElement(array, i));
+    jobject item = m_env->GetObjectArrayElement(array, i);
+
+    items[i] = Wrap(item);
+
+    m_env->DeleteLocalRef(item);
   }
 
   return items;

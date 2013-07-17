@@ -42,9 +42,9 @@ class ObjectTracer
   }
 public:
   ObjectTracer(v8::Handle<v8::Value> handle, T *object)
-    : m_handle(v8::Persistent<v8::Value>::New(v8::Isolate::GetCurrent(), handle)), m_object(object)
+    : m_object(object)
   {
-
+    m_handle.Reset(v8::Isolate::GetCurrent(), handle);
   }
   virtual ~ObjectTracer()
   {
@@ -149,7 +149,7 @@ private:
     clazz->SetCallAsFunctionHandler(T::Caller);
   }
 
-  static v8::Persistent<v8::ObjectTemplate> CreateObjectTemplate(void)
+  static v8::Handle<v8::ObjectTemplate> CreateObjectTemplate(void)
   {
     v8::HandleScope handle_scope;
 
@@ -157,7 +157,7 @@ private:
 
     SetupObjectTemplate(clazz);
 
-    return v8::Persistent<v8::ObjectTemplate>::New(v8::Isolate::GetCurrent(), clazz);
+    return handle_scope.Close(clazz);
   }
 protected:
   static v8::Handle<v8::Object> InternalWrap(T *obj)
@@ -176,23 +176,24 @@ protected:
     template_t s_template;
 
     if (!ptr_s_template) {
-        s_template = CreateObjectTemplate();
+        s_template.Reset(v8::Isolate::GetCurrent(), CreateObjectTemplate());
         pthread_setspecific(s_object_template_key, ptr_s_template);
     } else {
-        s_template = *ptr_s_template;
+        s_template.Reset(v8::Isolate::GetCurrent(), * (template_t *) ptr_s_template);
     }
 #else
 #ifdef _MSC_VER
     // BUG: Multithreaded usage is (probably) broken on Windows
-    static v8::Persistent<v8::ObjectTemplate> s_template(CreateObjectTemplate());
+    static v8::Persistent<v8::ObjectTemplate> s_template(v8::Isolate::GetCurrent(), CreateObjectTemplate());
 #else
 	static __thread v8::ObjectTemplate *s_template = NULL;
 
-	if (!s_template) s_template = *CreateObjectTemplate();
+	if (!s_template) s_template.Reset(v8::Isolate::GetCurrent(), CreateObjectTemplate());
 #endif
 #endif
 
-    v8::Handle<v8::Object> instance = s_template->NewInstance();
+    v8::Handle<v8::ObjectTemplate> l_template = v8::Local<v8::ObjectTemplate>::New(v8::Isolate::GetCurrent(), s_template);
+    v8::Handle<v8::Object> instance = l_template->NewInstance();
 
     ObjectTracer<T>::Trace(instance, obj);
 

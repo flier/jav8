@@ -586,7 +586,7 @@ jobject Env::NewV8Object(v8::Handle<v8::Object> obj)
 {
   static jmethodID cid = GetMethodID(buildins.lu.flier.script.V8Object, "<init>", "(J)V");
 
-  jlong value = (jlong) *v8::Persistent<v8::Object>::New(v8::Isolate::GetCurrent(), obj);
+  jlong value = (jlong) new v8::Persistent<v8::Object>(v8::Isolate::GetCurrent(), obj);
   return m_env->NewObject(buildins.lu.flier.script.V8Object, cid, value);
 }
 
@@ -594,7 +594,7 @@ jobject Env::NewV8Array(v8::Handle<v8::Array> array)
 {
   static jmethodID cid = GetMethodID(buildins.lu.flier.script.V8Array, "<init>", "(J)V");
 
-  jlong value = (jlong) *v8::Persistent<v8::Array>::New(v8::Isolate::GetCurrent(), array);
+  jlong value = (jlong) new v8::Persistent<v8::Array>(v8::Isolate::GetCurrent(), array);
   return m_env->NewObject(buildins.lu.flier.script.V8Array, cid, value);
 }
 
@@ -602,7 +602,7 @@ jobject Env::NewV8Function(v8::Handle<v8::Function> func)
 {
   static jmethodID cid = GetMethodID(buildins.lu.flier.script.V8Function, "<init>", "(J)V");
 
-  jlong value = (jlong) *v8::Persistent<v8::Function>::New(v8::Isolate::GetCurrent(), func);
+  jlong value = (jlong) new v8::Persistent<v8::Function>(v8::Isolate::GetCurrent(), func);
   return m_env->NewObject(buildins.lu.flier.script.V8Function, cid, value);
 }
 
@@ -610,7 +610,7 @@ jobject Env::NewV8Context(v8::Handle<v8::Context> ctxt)
 {
   static jmethodID cid = GetMethodID(buildins.lu.flier.script.V8Context, "<init>", "(J)V");
 
-  jlong value = (jlong) *v8::Persistent<v8::Context>::New(v8::Isolate::GetCurrent(), ctxt);
+  jlong value = (jlong) new v8::Persistent<v8::Context>(v8::Isolate::GetCurrent(), ctxt);
   return m_env->NewObject(buildins.lu.flier.script.V8Context, cid, value);
 }
 
@@ -776,13 +776,15 @@ v8::Handle<v8::Value> V8Env::Wrap(jobject value)
   {
     static jfieldID fid = GetFieldID(buildins.lu.flier.script.V8Array, "obj", "J");
 
-    result = v8::Handle<v8::Array>((v8::Array *) m_env->GetLongField(value, fid));
+    result = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+      *((v8::Persistent<v8::Array> *) m_env->GetLongField(value, fid)));
   }
   else if (IsAssignableFrom(clazz, buildins.lu.flier.script.V8Object))
   {
     static jfieldID fid = GetFieldID(buildins.lu.flier.script.V8Object, "obj", "J");
 
-    result = v8::Handle<v8::Object>((v8::Object *) m_env->GetLongField(value, fid));
+    result = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+      *((v8::Persistent<v8::Object> *) m_env->GetLongField(value, fid)));
   }
   else
   {
@@ -826,16 +828,18 @@ v8::Handle<v8::Value> V8Env::WrapV8Object(jobject value)
 {
   v8::HandleScope handle_scope;
   static jfieldID fid = GetFieldID(buildins.lu.flier.script.V8Object, "obj", "J");
-  v8::Handle<v8::Value> result = v8::Handle<v8::Object>((v8::Object *) m_env->GetLongField(value, fid));
-  return ThrowIf(try_catch) ? v8::Handle<v8::Value>() : handle_scope.Close(result);
+  v8::Handle<v8::Object> result = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Object> *) m_env->GetLongField(value, fid)));
+  return ThrowIf(try_catch) ? v8::Handle<v8::Object>() : handle_scope.Close(result);
 }
 
 v8::Handle<v8::Value> V8Env::WrapV8Array(jobject value)
 {
   v8::HandleScope handle_scope;
   static jfieldID fid = GetFieldID(buildins.lu.flier.script.V8Array, "obj", "J");
-  v8::Handle<v8::Value> result = v8::Handle<v8::Value>((v8::Array *) m_env->GetLongField(value, fid));
-  return ThrowIf(try_catch) ? v8::Handle<v8::Value>() : handle_scope.Close(result);
+  v8::Handle<v8::Array> result = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) m_env->GetLongField(value, fid)));
+  return ThrowIf(try_catch) ? v8::Handle<v8::Array>() : handle_scope.Close(result);
 }
 
 v8::Handle<v8::Function> V8Env::WrapBoundMethod(jobject thiz, jmethodID mid, bool is_void, bool has_args)

@@ -33,7 +33,7 @@ void JNICALL Java_lu_flier_script_ManagedV8Object_internalRelease
   if (ptr)
   {
     if (jni::V8Isolate::IsAlive()) {
-      v8::Persistent<v8::Object>((v8::Object *) ptr).Dispose();
+      ((v8::Persistent<v8::Object> *) ptr)->Dispose();
     }
   }
 }
@@ -110,7 +110,7 @@ jlong JNICALL Java_lu_flier_script_V8CompiledScript_internalCompile
 
   v8::Handle<v8::Script> compiledScript = v8::Script::Compile(v8::String::New(script.c_str(), script.size()));
 
-  return env.HasCaught() ? 0 : (jlong) *v8::Persistent<v8::Script>::New(v8::Isolate::GetCurrent(), compiledScript);
+  return env.HasCaught() ? 0 : (jlong) new v8::Persistent<v8::Script>(v8::Isolate::GetCurrent(), compiledScript);
 }
 
 void JNICALL Java_lu_flier_script_V8CompiledScript_internalRelease
@@ -118,7 +118,7 @@ void JNICALL Java_lu_flier_script_V8CompiledScript_internalRelease
 {
   if (ptr) {
     if (jni::V8Isolate::IsAlive()) {
-      v8::Persistent<v8::Script>((v8::Script *) ptr).Dispose();
+      ((v8::Persistent<v8::Script> *) ptr)->Dispose();
     }
   }
 }
@@ -128,7 +128,8 @@ jobject JNICALL Java_lu_flier_script_V8CompiledScript_internalExecute
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Script> compiledScript((v8::Script *) pCompiledScript);
+  v8::Handle<v8::Script> compiledScript = v8::Local<v8::Script>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Script> *) pCompiledScript);
 
   v8::Handle<v8::Value> result = compiledScript->Run();
 
@@ -183,7 +184,7 @@ jlong JNICALL Java_lu_flier_script_V8Context_internalCreate(JNIEnv *pEnv, jobjec
 
   ctxt->Global()->Set(v8::String::NewSymbol("__proto__"), env.Wrap(pObj));
 
-  return (jlong) *v8::Persistent<v8::Context>::New(v8::Isolate::GetCurrent(), ctxt);
+  return (jlong) new v8::Persistent<v8::Context>(v8::Isolate::GetCurrent(), ctxt);
 }
 
 void JNICALL Java_lu_flier_script_V8Context_internalRelease
@@ -191,10 +192,14 @@ void JNICALL Java_lu_flier_script_V8Context_internalRelease
 {
   if (ptr) {
     if (jni::V8Isolate::IsAlive()) {
-      v8::Persistent<v8::Context> ctxt((v8::Context *) ptr);
+      v8::HandleScope handleScope;
+
+      v8::Handle<v8::Context> ctxt = v8::Local<v8::Context>::New(
+        v8::Isolate::GetCurrent(), *((v8::Persistent<v8::Context> *) ptr));
 
       ctxt->Exit();
-      ctxt.Dispose();
+
+      ((v8::Persistent<v8::Context> *) ptr)->Dispose();
     }
   }
 }
@@ -205,7 +210,10 @@ void JNICALL Java_lu_flier_script_V8Context_internalEnter
   if (ptr) {
     jni::V8Env env(pEnv);
 
-    v8::Persistent<v8::Context>((v8::Context *) ptr)->Enter();
+    v8::Handle<v8::Context> ctxt = v8::Local<v8::Context>::New(
+        v8::Isolate::GetCurrent(), *((v8::Persistent<v8::Context> *) ptr));
+
+    ctxt->Enter();
   }
 }
 
@@ -215,7 +223,10 @@ void JNICALL Java_lu_flier_script_V8Context_internalLeave
   if (ptr) {
     jni::V8Env env(pEnv);
 
-    v8::Persistent<v8::Context>((v8::Context *) ptr)->Exit();
+    v8::Handle<v8::Context> ctxt = v8::Local<v8::Context>::New(
+        v8::Isolate::GetCurrent(), *((v8::Persistent<v8::Context> *) ptr));
+
+    ctxt->Exit();
   }
 }
 
@@ -224,7 +235,10 @@ jobject JNICALL Java_lu_flier_script_V8Context_internalGetGlobal
 {
   jni::V8Env env(pEnv);
 
-  v8::Handle<v8::Object> global = v8::Persistent<v8::Context>((v8::Context *) ptr)->Global();
+  v8::Handle<v8::Context> ctxt = v8::Local<v8::Context>::New(
+    v8::Isolate::GetCurrent(), *((v8::Persistent<v8::Context> *) ptr));
+
+  v8::Handle<v8::Object> global = ctxt->Global();
 
   return env.HasCaught() ? NULL : env.NewV8Object(global);
 }
@@ -559,7 +573,8 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8Array_internalSet
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
 
   array->Set(index, env.Wrap(element));
 
@@ -571,7 +586,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetElements
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
 
   for (size_t i = 0; i < length; i++) {
       jobject item = pEnv->GetObjectArrayElement(elements, i);
@@ -594,7 +610,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetIntElements
     length = size;
   }
 
-  v8::Persistent<v8::Array> array = ((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
   v8::Handle<v8::Integer> zero = v8::Integer::New(0);
 
   jint *data = (jint *)(pEnv->GetPrimitiveArrayCritical(source, 0));
@@ -622,7 +639,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetLongElements
     length = size;
   }
 
-  v8::Persistent<v8::Array> array = ((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
   v8::Handle<v8::Number> zero = v8::Number::New(0.0);
 
   jlong *data = (jlong *)(pEnv->GetPrimitiveArrayCritical(source, 0));
@@ -650,7 +668,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetShortElements
     length = size;
   }
 
-  v8::Persistent<v8::Array> array = ((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
   v8::Handle<v8::Integer> zero = v8::Integer::New(0);
 
   jshort *data = (jshort *)(pEnv->GetPrimitiveArrayCritical(source, 0));
@@ -678,7 +697,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetDoubleElements
     length = size;
   }
 
-  v8::Persistent<v8::Array> array = ((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
   v8::Handle<v8::Number> zero = v8::Number::New(0.0);
 
   jdouble *data = (jdouble *)(pEnv->GetPrimitiveArrayCritical(source, 0));
@@ -706,7 +726,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetFloatElements
     length = size;
   }
 
-  v8::Persistent<v8::Array> array = ((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
   v8::Handle<v8::Number> zero = v8::Number::New(0.0);
 
   jfloat *data = (jfloat *)(pEnv->GetPrimitiveArrayCritical(source, 0));
@@ -734,7 +755,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetBooleanElements
     length = size;
   }
 
-  v8::Persistent<v8::Array> array = ((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
   v8::Handle<v8::Value> trueValue = v8::True();
   v8::Handle<v8::Value> falseValue = v8::False();
 
@@ -751,7 +773,9 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetDateElements
   (JNIEnv *pEnv, jobject, jlong pArray, jobjectArray source, jint length)
 {
   jni::V8Env env(pEnv);
-  v8::Persistent<v8::Array> array = ((v8::Array *)pArray);
+
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
   v8::Handle<v8::Value> nullValue = v8::Null();
 
   for (size_t i = 0; i < length; i++) {
@@ -771,7 +795,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetV8ArrayElements
   (JNIEnv *pEnv, jobject, jlong pArray, jobjectArray source, jint length)
 {
   jni::V8Env env(pEnv);
-  v8::Persistent<v8::Array> array = ((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
   v8::Handle<v8::Value> nullValue = v8::Null();
 
   for (size_t i = 0; i < length; i++) {
@@ -791,7 +816,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetV8ObjectElements
   (JNIEnv *pEnv, jobject, jlong pArray, jobjectArray source, jint length)
 {
   jni::V8Env env(pEnv);
-  v8::Persistent<v8::Array> array = ((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
   v8::Handle<v8::Value> nullValue = v8::Null();
 
   for (size_t i = 0; i < length; i++) {
@@ -810,7 +836,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetV8ObjectElements
 JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetStringElements
   (JNIEnv *pEnv, jobject, jlong pArray, jobjectArray source, jint length) {
   v8::HandleScope handleScope;
-  v8::Persistent<v8::Array> array = ((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
+    v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
   v8::Handle<v8::Value> nullValue = v8::Null();
 
   for (size_t i = 0; i < length; i++) {
@@ -834,7 +861,8 @@ jobjectArray JNICALL Java_lu_flier_script_V8Object_internalGetKeys(JNIEnv *pEnv,
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Object> obj((v8::Object *) env.GetLongField(pObj, "obj"));
+  v8::Handle<v8::Object> obj = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Object> *) env.GetLongField(pObj, "obj")));
 
   v8::Handle<v8::Array> names = obj->GetPropertyNames();
   jobjectArray keys = env.NewObjectArray(names->Length(), "java/lang/String");
@@ -853,7 +881,8 @@ jint JNICALL Java_lu_flier_script_V8Object_size(JNIEnv *pEnv, jobject pObj)
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Object> obj((v8::Object *) env.GetLongField(pObj, "obj"));
+  v8::Handle<v8::Object> obj = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Object> *) env.GetLongField(pObj, "obj")));
 
   return obj->GetPropertyNames()->Length();
 }
@@ -862,7 +891,8 @@ jboolean JNICALL Java_lu_flier_script_V8Object_isEmpty(JNIEnv *pEnv, jobject pOb
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Object> obj((v8::Object *) env.GetLongField(pObj, "obj"));
+  v8::Handle<v8::Object> obj = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Object> *) env.GetLongField(pObj, "obj")));
 
   return obj->GetPropertyNames()->Length() == 0;
 }
@@ -871,7 +901,8 @@ void JNICALL Java_lu_flier_script_V8Object_clear(JNIEnv *pEnv, jobject pObj)
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Object> obj((v8::Object *) env.GetLongField(pObj, "obj"));
+  v8::Handle<v8::Object> obj = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Object> *) env.GetLongField(pObj, "obj")));
 
   v8::Handle<v8::Array> names = obj->GetPropertyNames();
 
@@ -886,7 +917,8 @@ jboolean JNICALL Java_lu_flier_script_V8Object_containsKey
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Object> obj((v8::Object *) env.GetLongField(pObj, "obj"));
+  v8::Handle<v8::Object> obj = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Object> *) env.GetLongField(pObj, "obj")));
   const std::string key = env.GetString((jstring) pKey);
 
   return obj->Has(v8::String::New(key.c_str(), key.size())) ? JNI_TRUE : JNI_FALSE;
@@ -897,7 +929,8 @@ jobject JNICALL Java_lu_flier_script_V8Object_internalGet
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Object> obj((v8::Object *) env.GetLongField(pObj, "obj"));
+  v8::Handle<v8::Object> obj = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Object> *) env.GetLongField(pObj, "obj")));
   const std::string key = env.GetString((jstring) pKey);
 
   v8::Handle<v8::Value> value = obj->Get(v8::String::New(key.c_str(), key.size()));
@@ -910,7 +943,8 @@ jobject JNICALL Java_lu_flier_script_V8Object_internalPut
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Object> obj((v8::Object *) env.GetLongField(pObj, "obj"));
+  v8::Handle<v8::Object> obj = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Object> *) env.GetLongField(pObj, "obj")));
   const std::string key = env.GetString((jstring) pKey);
   v8::Handle<v8::String> name = v8::String::New(key.c_str(), key.size());
 
@@ -925,7 +959,8 @@ jobject JNICALL Java_lu_flier_script_V8Object_internalRemove
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Object> obj((v8::Object *) env.GetLongField(pObj, "obj"));
+  v8::Handle<v8::Object> obj = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Object> *) env.GetLongField(pObj, "obj")));
   const std::string key = env.GetString((jstring) pKey);
   v8::Handle<v8::String> name = v8::String::New(key.c_str(), key.size());
 
@@ -940,7 +975,8 @@ jobject JNICALL Java_lu_flier_script_V8Array_internalGet
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
   v8::Handle<v8::Value> value = array->Get(index);
 
   return env.HasCaught() ? NULL : env.Wrap(value);
@@ -951,7 +987,8 @@ jobjectArray JNICALL Java_lu_flier_script_V8Array_internalToObjectArray
 {
   jni::V8Env env(pEnv);
 
-  v8::Handle<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
 
   return env.HasCaught() ? NULL : env.WrapArrayToNative(array);
 }
@@ -960,7 +997,8 @@ JNIEXPORT jintArray JNICALL Java_lu_flier_script_V8Array_internalToIntArray
   (JNIEnv *pEnv, jobject pObj, jlong pArray, jintArray buf, jint length)
 {
   v8::HandleScope handleScope;
-  v8::Handle<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
 
   jint *data = (jint *)(pEnv->GetPrimitiveArrayCritical(buf, 0));
 
@@ -982,7 +1020,8 @@ JNIEXPORT jlongArray JNICALL Java_lu_flier_script_V8Array_internalToLongArray
   (JNIEnv *pEnv, jobject pObj, jlong pArray, jlongArray buf, jint length)
 {
   v8::HandleScope handleScope;
-  v8::Handle<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
 
   jlong *data = (jlong *)(pEnv->GetPrimitiveArrayCritical(buf, 0));
 
@@ -1004,7 +1043,8 @@ JNIEXPORT jshortArray JNICALL Java_lu_flier_script_V8Array_internalToShortArray
   (JNIEnv *pEnv, jobject pObj, jlong pArray, jshortArray buf, jint length)
 {
   v8::HandleScope handleScope;
-  v8::Handle<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
 
   jshort *data = (jshort *)(pEnv->GetPrimitiveArrayCritical(buf, 0));
 
@@ -1026,7 +1066,8 @@ JNIEXPORT jdoubleArray JNICALL Java_lu_flier_script_V8Array_internalToDoubleArra
   (JNIEnv *pEnv, jobject pObj, jlong pArray, jdoubleArray buf, jint length)
 {
   v8::HandleScope handleScope;
-  v8::Handle<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
 
   jdouble *data = (jdouble *)(pEnv->GetPrimitiveArrayCritical(buf, 0));
 
@@ -1048,7 +1089,8 @@ JNIEXPORT jfloatArray JNICALL Java_lu_flier_script_V8Array_internalToFloatArray
   (JNIEnv *pEnv, jobject pObj, jlong pArray, jfloatArray buf, jint length)
 {
   v8::HandleScope handleScope;
-  v8::Handle<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
 
   jfloat *data = (jfloat *)(pEnv->GetPrimitiveArrayCritical(buf, 0));
 
@@ -1070,7 +1112,8 @@ JNIEXPORT jbooleanArray JNICALL Java_lu_flier_script_V8Array_internalToBooleanAr
   (JNIEnv *pEnv, jobject pObj, jlong pArray, jbooleanArray buf, jint length)
 {
   v8::HandleScope handleScope;
-  v8::Handle<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
 
   jboolean *data = (jboolean *)(pEnv->GetPrimitiveArrayCritical(buf, 0));
 
@@ -1090,7 +1133,8 @@ JNIEXPORT jobjectArray JNICALL Java_lu_flier_script_V8Array_internalToStringArra
   (JNIEnv *pEnv, jobject, jlong pArray, jobjectArray dest, jint length)
 {
   v8::HandleScope handleScope;
-  v8::Handle<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
   v8::Handle<v8::Value> value;
 
   for (size_t i=0; i<length; i++)
@@ -1111,7 +1155,8 @@ JNIEXPORT jobjectArray JNICALL Java_lu_flier_script_V8Array_internalToDateArray
 {
   jni::V8Env env(pEnv);
   v8::HandleScope handleScope;
-  v8::Handle<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
 
   for (size_t i=0; i<length; i++)
   {
@@ -1130,7 +1175,8 @@ jint JNICALL Java_lu_flier_script_V8Array_internalGetSize
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Array> array((v8::Array *)pArray);
+  v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Array> *) pArray));
 
   return array->Length();
 }
@@ -1140,10 +1186,16 @@ jobject JNICALL Java_lu_flier_script_V8Function_internalInvoke
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Function> func((v8::Function *)pFunc);
-  v8::Handle<v8::Object> thiz = v8::Persistent<v8::Object>((v8::Object *) pThiz);
+  v8::Handle<v8::Function> func = v8::Local<v8::Function>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Function> *) pFunc));
+  v8::Handle<v8::Object> thiz;
 
-  if (thiz.IsEmpty()) thiz = v8::Context::GetCurrent()->Global();
+  if (pThiz) {
+    thiz  = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(), *((v8::Persistent<v8::Object> *) pThiz));
+  } else {
+    thiz = v8::Context::GetCurrent()->Global();
+  }
+
   std::vector< v8::Handle<v8::Value> > args;
 
   if (pArgs) args = env.GetArray(pArgs);
@@ -1158,7 +1210,8 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Function_internalInvokeVoid
 {
   jni::V8Env env(pEnv);
 
-  v8::Persistent<v8::Function> func((v8::Function *)pFunc);
+  v8::Handle<v8::Function> func = v8::Local<v8::Function>::New(v8::Isolate::GetCurrent(),
+    *((v8::Persistent<v8::Function> *) pFunc));
   v8::Handle<v8::Object> thiz = v8::Context::GetCurrent()->Global();
 
   if (pArgs) {

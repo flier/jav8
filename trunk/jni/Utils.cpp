@@ -578,7 +578,7 @@ jobject Env::NewDate(v8::Handle<v8::Date> date)
 {
   static jmethodID cid = GetMethodID(buildins.java.util.Date, "<init>", "(J)V");
 
-  jlong value = floor(date->NumberValue());
+  jlong value = floor(date->ValueOf());
   return m_env->NewObject(buildins.java.util.Date, cid, value);
 }
 

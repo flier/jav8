@@ -96,7 +96,7 @@ public:
 
   static CManagedObject& Unwrap(v8::Handle<v8::Object> obj)
   {
-    v8::HandleScope handle_scope;
+    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
 
     return *static_cast<CManagedObject *>(v8::Handle<v8::External>::Cast(obj->GetInternalField(0))->Value());
   }
@@ -108,38 +108,46 @@ protected:
   typedef CManagedObject __base__;
   typedef v8::Persistent<v8::ObjectTemplate> template_t;
 
-  static v8::Handle<v8::Value> NamedGetter(
-    v8::Local<v8::String> prop, const v8::AccessorInfo& info)
-  { return v8::Handle<v8::Value>(); }
-  static v8::Handle<v8::Value> NamedSetter(
-    v8::Local<v8::String> prop, v8::Local<v8::Value> value, const v8::AccessorInfo& info)
-  { return v8::Handle<v8::Value>(); }
-  static v8::Handle<v8::Integer> NamedQuery(
-    v8::Local<v8::String> prop, const v8::AccessorInfo& info)
-  { return v8::Handle<v8::Integer>(); }
-  static v8::Handle<v8::Boolean> NamedDeleter(
-    v8::Local<v8::String> prop, const v8::AccessorInfo& info)
-  { return v8::False(); }
-  static v8::Handle<v8::Array> NamedEnumerator(const v8::AccessorInfo& info)
-  { return v8::Handle<v8::Array>(); }
+  static void NamedGetter(
+    v8::Local<v8::String> property,
+    const v8::PropertyCallbackInfo<v8::Value>& info) {}
 
-  static v8::Handle<v8::Value> IndexedGetter(
-    uint32_t index, const v8::AccessorInfo& info)
-  { return v8::Handle<v8::Value>(); }
-  static v8::Handle<v8::Value> IndexedSetter(
-    uint32_t index, v8::Local<v8::Value> value, const v8::AccessorInfo& info)
-  { return v8::Handle<v8::Value>(); }
-  static v8::Handle<v8::Integer> IndexedQuery(
-    uint32_t index, const v8::AccessorInfo& info)
-  { return v8::Handle<v8::Integer>(); }
-  static v8::Handle<v8::Boolean> IndexedDeleter(
-    uint32_t index, const v8::AccessorInfo& info)
-  { return v8::False(); }
-  static v8::Handle<v8::Array> IndexedEnumerator(const v8::AccessorInfo& info)
-  { return v8::Handle<v8::Array>(); }
+  static void NamedSetter(
+    v8::Local<v8::String> property, v8::Local<v8::Value> value,
+    const v8::PropertyCallbackInfo<v8::Value>& info) {}
 
-  static v8::Handle<v8::Value> Caller(const v8::Arguments& args)
-  { return v8::Handle<v8::Value>(); }
+  static void NamedQuery(
+    v8::Local<v8::String> property,
+    const v8::PropertyCallbackInfo<v8::Integer>& info) {}
+
+  static void NamedDeleter(
+    v8::Local<v8::String> property,
+    const v8::PropertyCallbackInfo<v8::Boolean>& info) { info.GetReturnValue().Set(v8::False()); }
+
+  static void NamedEnumerator(
+    const v8::PropertyCallbackInfo<v8::Array>& info) {}
+
+  static void IndexedGetter(
+    uint32_t index,
+    const v8::PropertyCallbackInfo<v8::Value>& info) {}
+
+  static void IndexedSetter(
+    uint32_t index, v8::Local<v8::Value> value,
+    const v8::PropertyCallbackInfo<v8::Value>& info) {}
+
+  static void IndexedQuery(
+    uint32_t index,
+    const v8::PropertyCallbackInfo<v8::Integer>& info) {}
+
+  static void IndexedDeleter(
+    uint32_t index,
+    const v8::PropertyCallbackInfo<v8::Boolean>& info) { info.GetReturnValue().Set(v8::False()); }
+
+  static void IndexedEnumerator(
+    const v8::PropertyCallbackInfo<v8::Array>& info) {}
+
+  static void Caller(const v8::FunctionCallbackInfo<v8::Value>& info) {}
+
 private:
   static void SetupObjectTemplate(v8::Handle<v8::ObjectTemplate> clazz)
   {
@@ -151,7 +159,7 @@ private:
 
   static v8::Handle<v8::ObjectTemplate> CreateObjectTemplate(void)
   {
-    v8::HandleScope handle_scope;
+    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
 
     v8::Handle<v8::ObjectTemplate> clazz = v8::ObjectTemplate::New();
 
@@ -162,11 +170,11 @@ private:
 protected:
   static v8::Handle<v8::Object> InternalWrap(T *obj)
   {
-    v8::HandleScope handle_scope;
+    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
     v8::TryCatch try_catch;
 
 #ifdef __APPLE__
-    static pthread_key_t s_object_template_key = NULL;
+    static pthread_key_t s_object_template_key = 0;
 
     if (!s_object_template_key) {
         pthread_key_create(&s_object_template_key, NULL);
@@ -209,7 +217,7 @@ public:
 
   static v8::Handle<v8::Object> Wrap(JNIEnv *pEnv, jobject obj)
   {
-    v8::HandleScope handle_scope;
+    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
 
     return handle_scope.Close(InternalWrap(new T(pEnv, obj)));
   }
@@ -226,13 +234,20 @@ public:
   CJavaObject(JNIEnv *pEnv, jobject obj) : __base__(pEnv, obj) {
   }
 
-  static v8::Handle<v8::Value> NamedGetter(
-    v8::Local<v8::String> prop, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Value> NamedSetter(
-    v8::Local<v8::String> prop, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Integer> NamedQuery(
-    v8::Local<v8::String> prop, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Array> NamedEnumerator(const v8::AccessorInfo& info);
+  static void NamedGetter(
+    v8::Local<v8::String> property,
+    const v8::PropertyCallbackInfo<v8::Value>& info);
+
+  static void NamedSetter(
+    v8::Local<v8::String> property, v8::Local<v8::Value> value,
+    const v8::PropertyCallbackInfo<v8::Value>& info);
+
+  static void NamedQuery(
+    v8::Local<v8::String> property,
+    const v8::PropertyCallbackInfo<v8::Integer>& info);
+
+  static void NamedEnumerator(
+    const v8::PropertyCallbackInfo<v8::Array>& info);
 };
 
 class CJavaArray : public CBaseJavaObject<CJavaArray> {
@@ -243,18 +258,28 @@ public:
 
   size_t GetLength(void) { return m_pEnv->GetArrayLength((jarray) m_obj); }
 
-  static v8::Handle<v8::Value> NamedGetter(
-    v8::Local<v8::String> prop, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Integer> NamedQuery(
-    v8::Local<v8::String> prop, const v8::AccessorInfo& info);
+  static void NamedGetter(
+    v8::Local<v8::String> property,
+    const v8::PropertyCallbackInfo<v8::Value>& info);
 
-  static v8::Handle<v8::Value> IndexedGetter(
-    uint32_t index, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Value> IndexedSetter(
-    uint32_t index, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Integer> IndexedQuery(
-    uint32_t index, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Array> IndexedEnumerator(const v8::AccessorInfo& info);
+  static void NamedQuery(
+    v8::Local<v8::String> property,
+    const v8::PropertyCallbackInfo<v8::Integer>& info);
+
+  static void IndexedGetter(
+    uint32_t index,
+    const v8::PropertyCallbackInfo<v8::Value>& info);
+
+  static void IndexedSetter(
+    uint32_t index, v8::Local<v8::Value> value,
+    const v8::PropertyCallbackInfo<v8::Value>& info);
+
+  static void IndexedQuery(
+    uint32_t index,
+    const v8::PropertyCallbackInfo<v8::Integer>& info);
+
+  static void IndexedEnumerator(
+    const v8::PropertyCallbackInfo<v8::Array>& info);
 };
 
 class CJavaFunction {
@@ -278,7 +303,7 @@ public:
   }
 
   JNIEnv *GetEnv(void) { return m_pEnv; }
-  jobject GetMethod(const v8::Arguments& args);
+  jobject GetMethod(const v8::FunctionCallbackInfo<v8::Value>& info);
 
   static void ReleaseMethods(JNIEnv *pEnv, const methods_t& methods);
   static const types_t GetParameterTypes(JNIEnv *pEnv, jobject method);
@@ -300,7 +325,8 @@ public:
 
     return env.Close(instance);
   }
-  static v8::Handle<v8::Value> Caller(const v8::Arguments& args);
+
+  static void Caller(const v8::FunctionCallbackInfo<v8::Value>& info);
 };
 
 class CJavaBoundMethod {
@@ -345,7 +371,7 @@ public:
     return env.Close(instance);
   }
 
-  static v8::Handle<v8::Value> Caller(const v8::Arguments& args);
+  static void Caller(const v8::FunctionCallbackInfo<v8::Value>& info);
 };
 
 
@@ -355,17 +381,6 @@ public:
   CJavaContext(JNIEnv *pEnv, jobject obj) : __base__(pEnv, obj) {
   }
 public:
-  /*
-  static v8::Handle<v8::Value> NamedGetter(
-    v8::Local<v8::String> prop, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Value> NamedSetter(
-    v8::Local<v8::String> prop, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Integer> NamedQuery(
-    v8::Local<v8::String> prop, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Boolean> NamedDeleter(
-    v8::Local<v8::String> prop, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Array> NamedEnumerator(const v8::AccessorInfo& info);
-  */
 };
 
 } // namespace jni

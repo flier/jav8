@@ -5,9 +5,10 @@
 #include "Utils.h"
 
 namespace jni {
-    
-v8::Handle<v8::Value> CJavaObject::NamedGetter(
-  v8::Local<v8::String> prop, const v8::AccessorInfo& info)
+
+void CJavaObject::NamedGetter(
+  v8::Local<v8::String> prop,
+  const v8::PropertyCallbackInfo<v8::Value>& info)
 {
   CJavaObject& obj = Unwrap(info.Holder());
 
@@ -15,10 +16,12 @@ v8::Handle<v8::Value> CJavaObject::NamedGetter(
 
   v8::String::Utf8Value name(prop);
 
-  return env.Close(env.GetMember(obj.m_obj, *name));
+  info.GetReturnValue().Set(env.GetMember(obj.m_obj, *name));
 }
-v8::Handle<v8::Value> CJavaObject::NamedSetter(
-  v8::Local<v8::String> prop, v8::Local<v8::Value> value, const v8::AccessorInfo& info)
+
+void CJavaObject::NamedSetter(
+  v8::Local<v8::String> prop, v8::Local<v8::Value> value,
+  const v8::PropertyCallbackInfo<v8::Value>& info)
 {
   CJavaObject& obj = Unwrap(info.Holder());
 
@@ -26,10 +29,12 @@ v8::Handle<v8::Value> CJavaObject::NamedSetter(
 
   v8::String::Utf8Value name(prop);
 
-  return env.Close(env.SetMember(obj.m_obj, *name, value));
+  info.GetReturnValue().Set(env.SetMember(obj.m_obj, *name, value));
 }
-v8::Handle<v8::Integer> CJavaObject::NamedQuery(
-  v8::Local<v8::String> prop, const v8::AccessorInfo& info)
+
+void CJavaObject::NamedQuery(
+  v8::Local<v8::String> prop,
+  const v8::PropertyCallbackInfo<v8::Integer>& info)
 {
   CJavaObject& obj = Unwrap(info.Holder());
 
@@ -37,20 +42,24 @@ v8::Handle<v8::Integer> CJavaObject::NamedQuery(
 
   v8::String::Utf8Value name(prop);
 
-  return env.HasMember(obj.m_obj, *name) ? env.Close(v8::Integer::New(v8::None)) : 
-                                           v8::Handle<v8::Integer>();
+  if (env.HasMember(obj.m_obj, *name)) {
+    info.GetReturnValue().Set(v8::Integer::New(v8::None));
+  }
 }
-v8::Handle<v8::Array> CJavaObject::NamedEnumerator(const v8::AccessorInfo& info)
+
+void CJavaObject::NamedEnumerator(
+  const v8::PropertyCallbackInfo<v8::Array>& info)
 {
   CJavaObject& obj = Unwrap(info.Holder());
 
   jni::V8Env env(obj.m_pEnv);
 
-  return env.Close(env.GetMembers(obj.m_obj));
+  info.GetReturnValue().Set(env.GetMembers(obj.m_obj));
 }
 
-v8::Handle<v8::Value> CJavaArray::NamedGetter(
-  v8::Local<v8::String> prop, const v8::AccessorInfo& info)
+void CJavaArray::NamedGetter(
+  v8::Local<v8::String> prop,
+  const v8::PropertyCallbackInfo<v8::Value>& info)
 {
   CJavaArray& obj = Unwrap(info.Holder());
 
@@ -59,13 +68,15 @@ v8::Handle<v8::Value> CJavaArray::NamedGetter(
   v8::String::Utf8Value name(prop);
 
   if (strcmp("length", *name) == 0) {
-    return env.Close(v8::Uint32::New(obj.GetLength()));
+    info.GetReturnValue().Set(v8::Uint32::New(obj.GetLength()));
+  } else {
+    __base__::NamedGetter(prop, info);
   }
-
-  return __base__::NamedGetter(prop, info);
 }
-v8::Handle<v8::Integer> CJavaArray::NamedQuery(
-  v8::Local<v8::String> prop, const v8::AccessorInfo& info)
+
+void CJavaArray::NamedQuery(
+  v8::Local<v8::String> prop,
+  const v8::PropertyCallbackInfo<v8::Integer>& info)
 {
   CJavaArray& obj = Unwrap(info.Holder());
 
@@ -74,14 +85,15 @@ v8::Handle<v8::Integer> CJavaArray::NamedQuery(
   v8::String::Utf8Value name(prop);
 
   if (strcmp("length", *name) == 0) {
-    return env.Close(v8::Integer::New(v8::None));
+    info.GetReturnValue().Set(v8::Integer::New(v8::None));
+  } else {
+    __base__::NamedQuery(prop, info);
   }
-
-  return __base__::NamedQuery(prop, info);
 }
 
-v8::Handle<v8::Value> CJavaArray::IndexedGetter(
-  uint32_t index, const v8::AccessorInfo& info)
+void CJavaArray::IndexedGetter(
+  uint32_t index,
+  const v8::PropertyCallbackInfo<v8::Value>& info)
 {
   CJavaArray& obj = Unwrap(info.Holder());
 
@@ -89,10 +101,12 @@ v8::Handle<v8::Value> CJavaArray::IndexedGetter(
 
   static jmethodID mid = env.GetStaticMethodID(env.buildins.java.lang.reflect.Array, "get", "(Ljava/lang/Object;I)Ljava/lang/Object;");
 
-  return env.Close(env.Wrap(env->CallStaticObjectMethod(env.buildins.java.lang.reflect.Array, mid, obj.m_obj, index)));
+  info.GetReturnValue().Set(env.Wrap(env->CallStaticObjectMethod(env.buildins.java.lang.reflect.Array, mid, obj.m_obj, index)));
 }
-v8::Handle<v8::Value> CJavaArray::IndexedSetter(
-  uint32_t index, v8::Local<v8::Value> value, const v8::AccessorInfo& info)
+
+void CJavaArray::IndexedSetter(
+  uint32_t index, v8::Local<v8::Value> value,
+  const v8::PropertyCallbackInfo<v8::Value>& info)
 {
   CJavaArray& obj = Unwrap(info.Holder());
 
@@ -102,22 +116,26 @@ v8::Handle<v8::Value> CJavaArray::IndexedSetter(
 
   env->CallStaticVoidMethod(env.buildins.java.lang.reflect.Array, mid, obj.m_obj, index, env.Wrap(value));
 
-  return env.Close(value);
+  info.GetReturnValue().Set(value);
 }
-v8::Handle<v8::Integer> CJavaArray::IndexedQuery(
-  uint32_t index, const v8::AccessorInfo& info)
+
+void CJavaArray::IndexedQuery(
+  uint32_t index,
+  const v8::PropertyCallbackInfo<v8::Integer>& info)
 {
   CJavaArray& obj = Unwrap(info.Holder());
 
   jni::V8Env env(obj.m_pEnv);
 
   if (index < obj.GetLength()) {
-    return env.Close(v8::Integer::New(v8::None));
+    info.GetReturnValue().Set(v8::Integer::New(v8::None));
+  } else {
+    __base__::IndexedQuery(index, info);
   }
-
-  return __base__::IndexedQuery(index, info);
 }
-v8::Handle<v8::Array> CJavaArray::IndexedEnumerator(const v8::AccessorInfo& info)
+
+void CJavaArray::IndexedEnumerator(
+  const v8::PropertyCallbackInfo<v8::Array>& info)
 {
   CJavaArray& obj = Unwrap(info.Holder());
 
@@ -131,8 +149,9 @@ v8::Handle<v8::Array> CJavaArray::IndexedEnumerator(const v8::AccessorInfo& info
     result->Set(v8::Uint32::New(i), v8::Int32::New(i)->ToString());
   }
 
-  return env.Close(result);
+  info.GetReturnValue().Set(result);
 }
+
 CJavaFunction::CJavaFunction(JNIEnv *pEnv, jobject obj)
   : m_pEnv(pEnv)
 {
@@ -173,7 +192,7 @@ const CJavaFunction::types_t CJavaFunction::GetParameterTypes(JNIEnv *pEnv, jobj
 
   return types;
 }
-jobject CJavaFunction::GetMethod(const v8::Arguments& args)
+jobject CJavaFunction::GetMethod(const v8::FunctionCallbackInfo<v8::Value>& info)
 {
   jni::V8Env env(m_pEnv);
 
@@ -182,10 +201,10 @@ jobject CJavaFunction::GetMethod(const v8::Arguments& args)
   if (m_methods.size() > 1)
   {
     for (size_t i=0; i<m_methods.size(); i++)
-    {      
+    {
       const types_t& types = m_methods[i].second;
 
-      if (types.size() == args.Length())
+      if (types.size() == info.Length())
       {
         bool same = true;
 
@@ -193,7 +212,7 @@ jobject CJavaFunction::GetMethod(const v8::Arguments& args)
 
         for (size_t j=0; j<types.size(); j++)
         {
-          if (!CanConvert(types[j], args[j]))
+          if (!CanConvert(types[j], info[j]))
           {
             same = false;
             break;
@@ -247,107 +266,77 @@ bool CJavaFunction::CanConvert(jclass clazz, v8::Handle<v8::Value> value)
   {
     return true;
   }
-  
+
   return false;
 }
 
-v8::Handle<v8::Value> CJavaFunction::Caller(const v8::Arguments& args) 
+void CJavaFunction::Caller(const v8::FunctionCallbackInfo<v8::Value>& info)
 {
-  CJavaFunction& func = *static_cast<CJavaFunction *>(v8::Handle<v8::External>::Cast(args.Data())->Value());
+  CJavaFunction& func = *static_cast<CJavaFunction *>(v8::Handle<v8::External>::Cast(info.Data())->Value());
 
   jni::V8Env env(func.GetEnv());
 
-  bool hasThiz = CManagedObject::IsWrapped(args.This()->ToObject());
-  jobject thiz = hasThiz ? CManagedObject::Unwrap(args.This()->ToObject()).GetObject() : NULL;
-  
-  jobjectArray params = (jobjectArray) env.NewObjectArray(args.Length());
+  bool hasThiz = CManagedObject::IsWrapped(info.This()->ToObject());
+  jobject thiz = hasThiz ? CManagedObject::Unwrap(info.This()->ToObject()).GetObject() : NULL;
 
-  for (size_t i=0; i<args.Length(); i++)
+  jobjectArray params = (jobjectArray) env.NewObjectArray(info.Length());
+
+  for (size_t i=0; i<info.Length(); i++)
   {
-    env->SetObjectArrayElement(params, i, env.Wrap(args[i]));
+    env->SetObjectArrayElement(params, i, env.Wrap(info[i]));
   }
-  
-  jobject method = func.GetMethod(args);
+
+  jobject method = func.GetMethod(info);
   static jmethodID mid = env.GetMethodID(env.buildins.java.lang.reflect.Method, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
-  
+
   jobject result = env->CallObjectMethod(method, mid, thiz, params);
 
-  return env.Close(env.Wrap(result));  
+  info.GetReturnValue().Set(env.Wrap(result));
 }
 
-v8::Handle<v8::Value> CJavaBoundMethod::Caller(const v8::Arguments& args) 
+void CJavaBoundMethod::Caller(const v8::FunctionCallbackInfo<v8::Value>& info)
 {
-  CJavaBoundMethod& func = *static_cast<CJavaBoundMethod *>(v8::Handle<v8::External>::Cast(args.Data())->Value());
+  CJavaBoundMethod& func = *static_cast<CJavaBoundMethod *>(v8::Handle<v8::External>::Cast(info.Data())->Value());
 
   JNIEnv *pEnv = func.GetEnv();
   jobject thiz = func.GetThiz();
   jmethodID mid = func.GetMid();
 
-  if (func.HasArgs()) 
+  if (func.HasArgs())
   {
     jni::V8Env env(func.GetEnv());
-    
-    jobjectArray params = (jobjectArray) env.NewObjectArray(args.Length());
 
-    for (size_t i=0; i<args.Length(); i++)
+    jobjectArray params = (jobjectArray) env.NewObjectArray(info.Length());
+
+    for (size_t i=0; i<info.Length(); i++)
     {
-      env->SetObjectArrayElement(params, i, env.Wrap(args[i]));
+      env->SetObjectArrayElement(params, i, env.Wrap(info[i]));
     }
 
-    if (func.IsVoid()) 
+    if (func.IsVoid())
     {
       pEnv->CallVoidMethod(thiz, mid, params);
-      return v8::Null();
-    } 
-    else 
+      info.GetReturnValue().Set(v8::Null());
+    }
+    else
     {
       jobject result = pEnv->CallObjectMethod(thiz, mid, params);
-      return env.Wrap(result);
+      info.GetReturnValue().Set(env.Wrap(result));
     }
-  } 
-  else 
+  }
+  else
   {
-    if (func.IsVoid()) 
+    if (func.IsVoid())
     {
       pEnv->CallVoidMethod(thiz, mid);
-      return v8::Null();
-    } 
-    else 
+      info.GetReturnValue().Set(v8::Null());
+    }
+    else
     {
       jni::V8Env env(func.GetEnv());
       jobject result = pEnv->CallObjectMethod(thiz, mid);
-      return env.Wrap(result);
+      info.GetReturnValue().Set(env.Wrap(result));
     }
   }
 }
-/*
-v8::Handle<v8::Value> CJavaContext::NamedGetter(
-  v8::Local<v8::String> prop, const v8::AccessorInfo& info)
-{
-  CJavaContext& ctxt = Unwrap(info.Holder());
-
-  jclass cls = ctxt.m_pEnv->GetObjectClass(ctxt.m_obj);
-
-  
-}
-v8::Handle<v8::Value> CJavaContext::NamedSetter(
-  v8::Local<v8::String> prop, v8::Local<v8::Value> value, const v8::AccessorInfo& info)
-{
-
-}
-v8::Handle<v8::Integer> CJavaContext::NamedQuery(
-  v8::Local<v8::String> prop, const v8::AccessorInfo& info)
-{
-
-}
-v8::Handle<v8::Boolean> CJavaContext::NamedDeleter(
-  v8::Local<v8::String> prop, const v8::AccessorInfo& info)
-{
-
-}
-v8::Handle<v8::Array> CJavaContext::NamedEnumerator(const v8::AccessorInfo& info)
-{
-
-}
-*/
 } // namespace jni

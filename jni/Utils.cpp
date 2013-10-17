@@ -24,7 +24,7 @@ namespace jni {
   Cache::caches_t *Cache::s_caches = NULL;
 #else
 # ifdef __APPLE__
-  pthread_key_t Cache::s_caches_key = NULL;
+  pthread_key_t Cache::s_caches_key = 0;
 # else
   __thread Cache::caches_t *Cache::s_caches = NULL;
 # endif
@@ -454,7 +454,7 @@ bool Env::ThrowIf(const v8::TryCatch& try_catch)
 {
   if (try_catch.HasCaught() && !try_catch.Exception().IsEmpty())
   {
-    v8::HandleScope handle_scope;
+    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
 
     jclass type = buildins.java.lang.RuntimeException;
     v8::Handle<v8::Value> obj = try_catch.Exception();
@@ -489,7 +489,7 @@ bool Env::ThrowIf(const v8::TryCatch& try_catch)
 
 const std::string Env::Extract(const v8::TryCatch& try_catch)
 {
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
 
   std::ostringstream oss;
 
@@ -645,7 +645,7 @@ jobject V8Env::Wrap(v8::Handle<v8::Value> value)
 {
   assert(v8::Context::InContext());
 
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
 
   if (value.IsEmpty() || value->IsNull() || value->IsUndefined()) return NULL;
   if (value->IsTrue()) return NewBoolean(JNI_TRUE);
@@ -669,7 +669,7 @@ jobject V8Env::Wrap(v8::Handle<v8::Object> obj)
 {
   assert(v8::Context::InContext());
 
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
 
   if (obj->IsArray())
   {
@@ -690,7 +690,7 @@ jobjectArray V8Env::WrapArrayToNative(v8::Handle<v8::Value> obj)
   assert(v8::Context::InContext());
   assert(obj->IsArray());
 
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
 
   v8::Handle<v8::Array> array = v8::Handle<v8::Array>::Cast(obj);
 
@@ -718,7 +718,7 @@ jobjectArray V8Env::WrapArrayToNative(v8::Handle<v8::Value> obj)
 
 v8::Handle<v8::Value> V8Env::Wrap(jobject value)
 {
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
   v8::TryCatch try_catch;
 
   if (value == NULL) return handle_scope.Close(v8::Null());
@@ -818,7 +818,7 @@ v8::Handle<v8::Value> V8Env::Wrap(jobject value)
 
 v8::Handle<v8::Value> V8Env::WrapDate(jobject value)
 {
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
   static jmethodID mid = GetMethodID(buildins.java.util.Date, "getTime", "()J");
   v8::Handle<v8::Value> result = v8::Date::New(m_env->CallLongMethod(value, mid));
   return ThrowIf(try_catch) ? v8::Handle<v8::Value>() : handle_scope.Close(result);
@@ -826,7 +826,7 @@ v8::Handle<v8::Value> V8Env::WrapDate(jobject value)
 
 v8::Handle<v8::Value> V8Env::WrapV8Object(jobject value)
 {
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
   static jfieldID fid = GetFieldID(buildins.lu.flier.script.V8Object, "obj", "J");
   v8::Handle<v8::Object> result = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
     *((v8::Persistent<v8::Object> *) m_env->GetLongField(value, fid)));
@@ -835,7 +835,7 @@ v8::Handle<v8::Value> V8Env::WrapV8Object(jobject value)
 
 v8::Handle<v8::Value> V8Env::WrapV8Array(jobject value)
 {
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
   static jfieldID fid = GetFieldID(buildins.lu.flier.script.V8Array, "obj", "J");
   v8::Handle<v8::Array> result = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
     *((v8::Persistent<v8::Array> *) m_env->GetLongField(value, fid)));
@@ -844,7 +844,7 @@ v8::Handle<v8::Value> V8Env::WrapV8Array(jobject value)
 
 v8::Handle<v8::Function> V8Env::WrapBoundMethod(jobject thiz, jmethodID mid, bool is_void, bool has_args)
 {
-  v8::HandleScope handle_scope;
+  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
   v8::Handle<v8::Function> result = CJavaBoundMethod::Wrap(m_env, thiz, mid, is_void, has_args);
   return ThrowIf(try_catch) ? v8::Handle<v8::Function>() : handle_scope.Close(result);
 }

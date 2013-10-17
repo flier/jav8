@@ -270,7 +270,7 @@ class V8Env : public Env, public V8Isolate {
   v8::HandleScope handle_scope;
   v8::TryCatch try_catch;
 public:
-  V8Env(JNIEnv *env) : Env(env)
+  V8Env(JNIEnv *env) : Env(env), handle_scope(v8::Isolate::GetCurrent())
   {
   }
   virtual ~V8Env() { ThrowIf(try_catch); }

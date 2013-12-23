@@ -450,7 +450,7 @@ public class V8ScriptEngineTest
 
 		// Indexed deleter
 		assertEquals(2, this.eng.eval("array[1]"));
-		assertFalse("delete array[1]", (boolean) this.eng.eval("delete array[1]"));
+		assertFalse("delete array[1]", (Boolean) this.eng.eval("delete array[1]"));
 		assertEquals(2, this.eng.eval("array[1]"));
 
 		// Indexed enumerator
@@ -690,8 +690,8 @@ public class V8ScriptEngineTest
         arr.setElements(new double[] { 543.21, 321.12 });
         assertTrue(Math.abs(((Double)arr.get(0)) - 543.21) < 0.01);
         assertTrue(Math.abs(((Double)arr.get(1)) - 321.12) < 0.01);
-        assertTrue(Math.abs(((Double)arr.toDoubleArray()[0]) - 543.21) < 0.01);
-        assertTrue(Math.abs(((Double)arr.toDoubleArray()[1]) - 321.12) < 0.01);
+        assertTrue(Math.abs((arr.toDoubleArray()[0]) - 543.21) < 0.01);
+        assertTrue(Math.abs((arr.toDoubleArray()[1]) - 321.12) < 0.01);
 
         float[] floatdata = new float[] { 123.45f, 345.12f };
         arr = ctxt.createArray(floatdata);
@@ -701,8 +701,8 @@ public class V8ScriptEngineTest
         arr.setElements(new float[] { 543.21f, 321.12f });
         assertTrue(Math.abs(((Double)arr.get(0)) - 543.21f) < 0.01);
         assertTrue(Math.abs(((Double)arr.get(1)) - 321.12f) < 0.01);
-        assertTrue(Math.abs(((Float)arr.toFloatArray()[0]) - 543.21f) < 0.01);
-        assertTrue(Math.abs(((Float)arr.toFloatArray()[1]) - 321.12f) < 0.01);
+        assertTrue(Math.abs((arr.toFloatArray()[0]) - 543.21f) < 0.01);
+        assertTrue(Math.abs((arr.toFloatArray()[1]) - 321.12f) < 0.01);
 
         boolean[] booldata = new boolean[] { false, true };
         arr = ctxt.createArray(booldata);
@@ -738,14 +738,14 @@ public class V8ScriptEngineTest
         assertEquals(3, arr.size());
         assertEquals(123123, ((Date)arr.get(0)).getTime());
         assertEquals(456456, ((Date)arr.get(1)).getTime());
-        assertNull(((Date)arr.get(2)));
+        assertNull((arr.get(2)));
         arr.setElements(new Date[] { new Date(333444), new Date(555666), null });
         assertEquals(333444, ((Date)arr.get(0)).getTime());
         assertEquals(555666, ((Date)arr.get(1)).getTime());
-        assertNull(((Date)arr.get(2)));
-        assertEquals(333444, ((Date)arr.toDateArray()[0]).getTime());
-        assertEquals(555666, ((Date)arr.toDateArray()[1]).getTime());
-        assertNull(((Date)arr.toDateArray()[2]));
+        assertNull((arr.get(2)));
+        assertEquals(333444, arr.toDateArray()[0].getTime());
+        assertEquals(555666, arr.toDateArray()[1].getTime());
+        assertNull((arr.toDateArray()[2]));
 
         V8Array innerArray1 = ctxt.createArray(new int[] { 1, 2, 3 });
         V8Array innerArray2 = ctxt.createArray(new int[] { 3, 2, 1 });
@@ -757,7 +757,7 @@ public class V8ScriptEngineTest
         assertEquals(3, ((V8Array)arr.get(1)).get(0));
         assertEquals(2, ((V8Array)arr.get(1)).get(1));
         assertEquals(1, ((V8Array)arr.get(1)).get(2));
-        assertNull(((V8Array)arr.get(2)));
+        assertNull((arr.get(2)));
         arr.setElements(new V8Array[] { innerArray2, innerArray1, null });
         assertEquals(3, ((V8Array)arr.get(0)).get(0));
         assertEquals(2, ((V8Array)arr.get(0)).get(1));
@@ -765,7 +765,7 @@ public class V8ScriptEngineTest
         assertEquals(1, ((V8Array)arr.get(1)).get(0));
         assertEquals(2, ((V8Array)arr.get(1)).get(1));
         assertEquals(3, ((V8Array)arr.get(1)).get(2));
-        assertNull(((V8Array)arr.get(2)));
+        assertNull((arr.get(2)));
 
         V8Object innerObj1 = ctxt.createObject();
         innerObj1.put("foo", "bar");
@@ -775,11 +775,11 @@ public class V8ScriptEngineTest
         assertEquals(3, arr.size());
         assertEquals("bar", ((V8Object)arr.get(0)).get("foo"));
         assertEquals("baz", ((V8Object)arr.get(1)).get("biz"));
-        assertNull(((V8Object)arr.get(2)));
+        assertNull((arr.get(2)));
         arr.setElements(new V8Object[] { innerObj2, innerObj1, null });
         assertEquals("baz", ((V8Object)arr.get(0)).get("biz"));
         assertEquals("bar", ((V8Object)arr.get(1)).get("foo"));
-        assertNull(((V8Object)arr.get(2)));
+        assertNull((arr.get(2)));
     }
 
     @Test

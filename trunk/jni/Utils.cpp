@@ -362,17 +362,17 @@ v8::Handle<v8::Array> Cache::GetMembers(jobject obj)
     fields_t& fields = iter->second.first;
     methods_t& methods = iter->second.second;
 
-    v8::Handle<v8::Array> result = v8::Array::New(fields.size() + methods.size());
+    v8::Handle<v8::Array> result = v8::Array::New(v8::Isolate::GetCurrent(), fields.size() + methods.size());
     uint32_t idx = 0;
 
     for (fields_t::const_iterator it = fields.begin(); it != fields.end(); it++)
     {
-      result->Set(idx++, v8::String::New(it->first.c_str(), it->first.size()));
+      result->Set(idx++, v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), it->first.c_str(), v8::String::kNormalString, it->first.size()));
     }
 
     for (methods_t::const_iterator it = methods.begin(); it != methods.end(); it++)
     {
-      result->Set(idx++, v8::String::New(it->first.c_str(), it->first.size()));
+      result->Set(idx++, v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), it->first.c_str(), v8::String::kNormalString, it->first.size()));
     }
 
     return env.Close(result);
@@ -462,7 +462,7 @@ bool Env::ThrowIf(const v8::TryCatch& try_catch)
     if (obj->IsObject())
     {
       v8::Handle<v8::Object> exc = obj->ToObject();
-      v8::Handle<v8::String> name = v8::String::New("name");
+      v8::Handle<v8::String> name = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), "name");
 
       if (exc->Has(name))
       {
@@ -643,8 +643,6 @@ bool V8Isolate::IsAlive() { return !v8::V8::IsExecutionTerminating() && !v8::V8:
 
 jobject V8Env::Wrap(v8::Handle<v8::Value> value)
 {
-  assert(v8::Context::InContext());
-
   v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
 
   if (value.IsEmpty() || value->IsNull() || value->IsUndefined()) return NULL;
@@ -667,8 +665,6 @@ jobject V8Env::Wrap(v8::Handle<v8::Value> value)
 
 jobject V8Env::Wrap(v8::Handle<v8::Object> obj)
 {
-  assert(v8::Context::InContext());
-
   v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
 
   if (obj->IsArray())
@@ -687,7 +683,6 @@ jobject V8Env::Wrap(v8::Handle<v8::Object> obj)
 
 jobjectArray V8Env::WrapArrayToNative(v8::Handle<v8::Value> obj)
 {
-  assert(v8::Context::InContext());
   assert(obj->IsArray());
 
   v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
@@ -718,12 +713,12 @@ jobjectArray V8Env::WrapArrayToNative(v8::Handle<v8::Value> obj)
 
 v8::Handle<v8::Value> V8Env::Wrap(jobject value)
 {
-  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+  v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
   v8::TryCatch try_catch;
 
-  if (value == NULL) return handle_scope.Close(v8::Null());
+  if (value == NULL) return handle_scope.Escape(v8::Local<v8::Primitive>(v8::Null(v8::Isolate::GetCurrent())));
 
-  v8::Handle<v8::Value> result;
+  v8::Local<v8::Value> result;
 
   jclass clazz = m_env->GetObjectClass(value);
 
@@ -732,7 +727,7 @@ v8::Handle<v8::Value> V8Env::Wrap(jobject value)
     jstring str = (jstring) value;
     const char *p = m_env->GetStringUTFChars(str, NULL);
 
-    result = v8::String::New(p, m_env->GetStringUTFLength(str));
+    result = v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), p, v8::String::kNormalString, m_env->GetStringUTFLength(str));
 
     m_env->ReleaseStringUTFChars(str, p);
   }
@@ -743,26 +738,26 @@ v8::Handle<v8::Value> V8Env::Wrap(jobject value)
   {
     static jmethodID mid = GetMethodID(buildins.java.lang.Number, "intValue", "()I");
 
-    result = v8::Integer::New(m_env->CallIntMethod(value, mid));
+    result = v8::Integer::New(v8::Isolate::GetCurrent(), m_env->CallIntMethod(value, mid));
   }
   else if (IsAssignableFrom(clazz, buildins.java.lang.Double) ||
            IsAssignableFrom(clazz, buildins.java.lang.Float))
   {
     static jmethodID mid = GetMethodID(buildins.java.lang.Number, "doubleValue", "()D");
 
-    result = v8::Number::New(m_env->CallDoubleMethod(value, mid));
+    result = v8::Number::New(v8::Isolate::GetCurrent(), m_env->CallDoubleMethod(value, mid));
   }
   else if (IsAssignableFrom(clazz, buildins.java.lang.Boolean))
   {
     static jmethodID mid = GetMethodID(buildins.java.lang.Boolean, "booleanValue", "()Z");
 
-    result = v8::Boolean::New(m_env->CallBooleanMethod(value, mid));
+    result = v8::Boolean::New(v8::Isolate::GetCurrent(), m_env->CallBooleanMethod(value, mid));
   }
   else if (IsAssignableFrom(clazz, buildins.java.util.Date))
   {
     static jmethodID mid = GetMethodID(buildins.java.util.Date, "getTime", "()J");
 
-    result = v8::Date::New(m_env->CallLongMethod(value, mid));
+    result = v8::Date::New(v8::Isolate::GetCurrent(), m_env->CallLongMethod(value, mid));
   }
   else if (IsAssignableFrom(clazz, buildins.java.lang.reflect.Method))
   {
@@ -793,7 +788,7 @@ v8::Handle<v8::Value> V8Env::Wrap(jobject value)
     if (m_env->CallBooleanMethod(m_env->GetObjectClass(value), mid)) {
     #ifdef USE_NATIVE_ARRAY
       size_t len = m_env->GetArrayLength((jarray) value);
-      v8::Handle<v8::Array> items = v8::Array::New(len);
+      v8::Handle<v8::Array> items = v8::Array::New(v8::Isolate::GetCurrent(), len);
 
       for (size_t i=0; i<len; i++)
       {
@@ -813,40 +808,40 @@ v8::Handle<v8::Value> V8Env::Wrap(jobject value)
     }
   }
 
-  return ThrowIf(try_catch) ? v8::Handle<v8::Value>() : handle_scope.Close(result);
+  return ThrowIf(try_catch) ? v8::Handle<v8::Value>() : handle_scope.Escape(result);
 }
 
 v8::Handle<v8::Value> V8Env::WrapDate(jobject value)
 {
-  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+  v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
   static jmethodID mid = GetMethodID(buildins.java.util.Date, "getTime", "()J");
-  v8::Handle<v8::Value> result = v8::Date::New(m_env->CallLongMethod(value, mid));
-  return ThrowIf(try_catch) ? v8::Handle<v8::Value>() : handle_scope.Close(result);
+  v8::Local<v8::Value> result = v8::Date::New(v8::Isolate::GetCurrent(), m_env->CallLongMethod(value, mid));
+  return ThrowIf(try_catch) ? v8::Handle<v8::Value>() : handle_scope.Escape(result);
 }
 
 v8::Handle<v8::Value> V8Env::WrapV8Object(jobject value)
 {
-  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+  v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
   static jfieldID fid = GetFieldID(buildins.lu.flier.script.V8Object, "obj", "J");
-  v8::Handle<v8::Object> result = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
+  v8::Local<v8::Object> result = v8::Local<v8::Object>::New(v8::Isolate::GetCurrent(),
     *((v8::Persistent<v8::Object> *) m_env->GetLongField(value, fid)));
-  return ThrowIf(try_catch) ? v8::Handle<v8::Object>() : handle_scope.Close(result);
+  return ThrowIf(try_catch) ? v8::Handle<v8::Object>() : handle_scope.Escape(result);
 }
 
 v8::Handle<v8::Value> V8Env::WrapV8Array(jobject value)
 {
-  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+  v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
   static jfieldID fid = GetFieldID(buildins.lu.flier.script.V8Array, "obj", "J");
-  v8::Handle<v8::Array> result = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
+  v8::Local<v8::Array> result = v8::Local<v8::Array>::New(v8::Isolate::GetCurrent(),
     *((v8::Persistent<v8::Array> *) m_env->GetLongField(value, fid)));
-  return ThrowIf(try_catch) ? v8::Handle<v8::Array>() : handle_scope.Close(result);
+  return ThrowIf(try_catch) ? v8::Handle<v8::Array>() : handle_scope.Escape(result);
 }
 
 v8::Handle<v8::Function> V8Env::WrapBoundMethod(jobject thiz, jmethodID mid, bool is_void, bool has_args)
 {
-  v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
-  v8::Handle<v8::Function> result = CJavaBoundMethod::Wrap(m_env, thiz, mid, is_void, has_args);
-  return ThrowIf(try_catch) ? v8::Handle<v8::Function>() : handle_scope.Close(result);
+  v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
+  v8::Local<v8::Function> result = CJavaBoundMethod::Wrap(m_env, thiz, mid, is_void, has_args);
+  return ThrowIf(try_catch) ? v8::Handle<v8::Function>() : handle_scope.Escape(result);
 }
 
 std::vector< v8::Handle<v8::Value> > V8Env::GetArray(jobjectArray array)

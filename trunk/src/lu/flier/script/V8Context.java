@@ -8,17 +8,17 @@ import java.lang.reflect.*;
 public class V8Context extends SimpleScriptContext
 {
 	private long ctxt;
-	
+
 	V8Context(long ctxt)
 	{
 		this.ctxt = ctxt;
 	}
-	
+
 	public V8Context()
 	{
 		this.ctxt = internalCreate();
 	}
-	
+
 	@Override
 	public Bindings getBindings(int scope) {
 		if (scope == ENGINE_SCOPE) {
@@ -41,7 +41,7 @@ public class V8Context extends SimpleScriptContext
 		if (scope == ENGINE_SCOPE) {
 			return getGlobal().get(name);
 		}
-		
+
 		return super.getAttribute(name, scope);
 	}
 
@@ -160,7 +160,7 @@ public class V8Context extends SimpleScriptContext
             signature = argSig + "Ljava/lang/Object;";
         } else {
             throw new NoSuchMethodException("Method " + name + " found on class " + klass.getName() + " must " +
-                                            "be void or return an Object in order to be bound to a javascript function. " + 
+                                            "be void or return an Object in order to be bound to a javascript function. " +
                                             "Current return type is " + returnType);
         }
 
@@ -213,23 +213,23 @@ public class V8Context extends SimpleScriptContext
 
 	public void dispose()
 	{
-		if (this.ctxt > 0) 
-		{			
+		if (this.ctxt > 0)
+		{
 			this.internalRelease(this.ctxt);
-			
+
 			this.ctxt = 0;
 		}
 	}
-	
-	
+
+
 	@Override
-	protected void finalize() throws Throwable 
+	protected void finalize() throws Throwable
 	{
 		super.finalize();
-		
+
 		this.dispose();
 	}
-	
+
 	public native static V8Context getEntered();
 	public native static V8Context getCurrent();
 	public native static V8Context getCalling();
@@ -247,26 +247,26 @@ public class V8Context extends SimpleScriptContext
     public native V8Array internalCreateV8ArrayArray(V8Array[] contents, int length);
     public native V8Array internalCreateV8ObjectArray(V8Object[] contents, int length);
     public native V8Function internalCreateV8Function(Object thiz, Class thizClass, String name, String signature, boolean isVoid, boolean hasArgs);
-	
+
 	public void enter()
 	{
 		internalEnter(this.ctxt);
 	}
-	
+
 	public void leave()
 	{
 		internalLeave(this.ctxt);
 	}
-	
-	public Object bind(Object obj) 
+
+	public Object bind(Object obj)
 	{
 		return obj instanceof V8ContextAware ? ((V8ContextAware) obj).bindTo(this) : obj;
 	}
-	
+
 	public V8Object getGlobal()
 	{
 		return (V8Object) internalGetGlobal(this.ctxt).bindTo(this);
-	}	
+	}
 
 	private native long internalCreate();
 	private native void internalRelease(long ctxt);

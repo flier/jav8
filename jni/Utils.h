@@ -267,7 +267,7 @@ class V8Isolate {
 };
 
 class V8Env : public Env, public V8Isolate {
-  v8::EscapableHandleScope handle_scope;
+  v8::HandleScope handle_scope;
   v8::TryCatch try_catch;
 public:
   V8Env(JNIEnv *env) : Env(env), handle_scope(v8::Isolate::GetCurrent())
@@ -282,13 +282,11 @@ public:
   jobject Wrap(v8::Handle<v8::Value> value);
   jobject Wrap(v8::Handle<v8::Object> value);
   jobjectArray WrapArrayToNative(v8::Handle<v8::Value> obj);
-  v8::Handle<v8::Value> Wrap(jobject value);
-  v8::Handle<v8::Value> WrapDate(jobject value);
-  v8::Handle<v8::Value> WrapV8Object(jobject value);
-  v8::Handle<v8::Value> WrapV8Array(jobject value);
-  v8::Handle<v8::Function> WrapBoundMethod(jobject value, jmethodID mid, bool is_void, bool has_args);
-
-  template <class T> v8::Local<T> Close(v8::Handle<T> value) { return handle_scope.Escape(v8::Local<T>(value)); }
+  v8::Local<v8::Value> Wrap(jobject value);
+  v8::Local<v8::Value> WrapDate(jobject value);
+  v8::Local<v8::Value> WrapV8Object(jobject value);
+  v8::Local<v8::Value> WrapV8Array(jobject value);
+  v8::Local<v8::Function> WrapBoundMethod(jobject value, jmethodID mid, bool is_void, bool has_args);
 };
 
 } // namespace jni

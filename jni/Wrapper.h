@@ -211,7 +211,7 @@ public:
 
   }
 
-  static v8::Handle<v8::Object> Wrap(JNIEnv *pEnv, jobject obj)
+  static v8::Local<v8::Object> Wrap(JNIEnv *pEnv, jobject obj)
   {
     v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
 
@@ -305,7 +305,7 @@ public:
   static const types_t GetParameterTypes(JNIEnv *pEnv, jobject method);
 
   template <typename T>
-  static v8::Handle<v8::Value> Wrap(JNIEnv *pEnv, T methods)
+  static v8::Local<v8::Value> Wrap(JNIEnv *pEnv, T methods)
   {
     jni::V8Env env(pEnv);
 
@@ -319,7 +319,7 @@ public:
 
     ObjectTracer<CJavaFunction>::Trace(instance, func);
 
-    return env.Close(instance);
+    return v8::EscapableHandleScope(v8::Isolate::GetCurrent()).Escape(instance);
   }
 
   static void Caller(const v8::FunctionCallbackInfo<v8::Value>& info);
@@ -364,7 +364,7 @@ public:
 
     ObjectTracer<CJavaBoundMethod>::Trace(instance, func);
 
-    return env.Close(instance);
+    return v8::EscapableHandleScope(v8::Isolate::GetCurrent()).Escape(instance);
   }
 
   static void Caller(const v8::FunctionCallbackInfo<v8::Value>& info);

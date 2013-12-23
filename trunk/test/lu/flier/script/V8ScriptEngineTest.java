@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -322,16 +323,16 @@ public class V8ScriptEngineTest
     @Test
     public void testDate() throws ScriptException, NoSuchMethodException
     {
-    	Calendar cal = Calendar.getInstance();
+    	Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
     	cal.set(2011, 8-1, 3, 0, 0, 0);
     	cal.set(Calendar.MILLISECOND, 0);
 
-    	Date d = (Date) this.eng.eval("var d = new Date(); d.setTime(Date.parse('2011-8-3')); d");
+    	Date d = (Date) this.eng.eval("var d = new Date(); d.setTime(Date.parse('2011-8-3 GMT')); d");
 
     	assertEquals(cal.getTime(), d);
 
-    	this.eng.eval("function test(d) { return d.getTime() == Date.parse('2011-8-3'); }");
+    	this.eng.eval("function test(d) { return d.getTime() == Date.parse('2011-8-3 GMT'); }");
 
     	assertTrue((Boolean) ((Invocable) this.eng).invokeFunction("test", cal.getTime()));
     }

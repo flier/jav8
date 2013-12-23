@@ -114,7 +114,7 @@ public class V8ScriptEngineTest
     }
 
     @Test
-    public void testInvoke() throws ScriptException, NoSuchMethodException, IOException
+    public void testInvokeFunction() throws ScriptException, NoSuchMethodException, IOException
     {
     	Invocable invocable = (Invocable) this.eng;
 
@@ -153,6 +153,19 @@ public class V8ScriptEngineTest
 
 		assertNotNull(person);
 		assertEquals("Flier say, hello baby", person.say("baby"));
+    }
+    
+    @Test
+    public void testInvokeMethod() throws ScriptException, NoSuchMethodException
+    {
+    	Invocable invocable = (Invocable) this.eng;
+
+    	this.eng.eval("var obj = {name : 'tom'}; obj.test = function() { return this.name; };");
+    	
+    	Object result = invocable.invokeMethod(this.eng.eval("obj"), "test");
+    	
+    	assertNotNull(result);
+    	assertEquals("tom", result);
     }
 
     public class TestFunc {

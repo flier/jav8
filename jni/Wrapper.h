@@ -182,15 +182,18 @@ protected:
     } else {
         s_template.Reset(v8::Isolate::GetCurrent(), * (template_t *) ptr_s_template);
     }
-#else
-#ifdef _MSC_VER
+#elif _MSC_VER
     // BUG: Multithreaded usage is (probably) broken on Windows
     static v8::Persistent<v8::ObjectTemplate> s_template(v8::Isolate::GetCurrent(), CreateObjectTemplate());
 #else
-	static __thread v8::ObjectTemplate *s_template = NULL;
+	static __thread template_t *ptr_s_template = NULL;
+  template_t s_template;
 
-	if (!s_template) s_template.Reset(v8::Isolate::GetCurrent(), CreateObjectTemplate());
-#endif
+	if (!ptr_s_template) {
+    ptr_s_template = new v8::Persistent<v8::ObjectTemplate>(v8::Isolate::GetCurrent(), CreateObjectTemplate());
+  }
+
+  s_template.Reset(v8::Isolate::GetCurrent(), *ptr_s_template);
 #endif
 
     v8::Handle<v8::ObjectTemplate> l_template = v8::Local<v8::ObjectTemplate>::New(v8::Isolate::GetCurrent(), s_template);

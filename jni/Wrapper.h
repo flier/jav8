@@ -27,18 +27,12 @@ class ObjectTracer
 
   void MakeWeak(void)
   {
-    m_handle.MakeWeak(this, WeakCallback);
+    m_handle.SetWeak(this, WeakCallback);
   }
 
-  static void WeakCallback(v8::Isolate *isolate, v8::Persistent<v8::Value> *value, ObjectTracer<T> *parameter)
+  static void WeakCallback(const v8::WeakCallbackData<v8::Value, ObjectTracer<T> >& data)
   {
-    assert(value->IsNearDeath());
-
-    ObjectTracer<T> *tracer = parameter;
-
-    assert(*value == tracer->m_handle);
-
-    delete tracer;
+    std::auto_ptr< ObjectTracer<T> > tracer(data.GetParameter());
   }
 public:
   ObjectTracer(v8::Handle<v8::Value> handle, T *object)
@@ -53,8 +47,7 @@ public:
       assert(m_handle.IsNearDeath());
 
       m_handle.ClearWeak();
-      m_handle.Dispose();
-      m_handle.Clear();
+      m_handle.Reset();
 
       m_object.reset();
     }
@@ -122,7 +115,7 @@ protected:
 
   static void NamedDeleter(
     v8::Local<v8::String> property,
-    const v8::PropertyCallbackInfo<v8::Boolean>& info) { info.GetReturnValue().Set(v8::False()); }
+    const v8::PropertyCallbackInfo<v8::Boolean>& info) { info.GetReturnValue().Set(v8::False(v8::Isolate::GetCurrent())); }
 
   static void NamedEnumerator(
     const v8::PropertyCallbackInfo<v8::Array>& info) {}
@@ -141,7 +134,7 @@ protected:
 
   static void IndexedDeleter(
     uint32_t index,
-    const v8::PropertyCallbackInfo<v8::Boolean>& info) { info.GetReturnValue().Set(v8::False()); }
+    const v8::PropertyCallbackInfo<v8::Boolean>& info) { info.GetReturnValue().Set(v8::False(v8::Isolate::GetCurrent())); }
 
   static void IndexedEnumerator(
     const v8::PropertyCallbackInfo<v8::Array>& info) {}
@@ -159,18 +152,18 @@ private:
 
   static v8::Handle<v8::ObjectTemplate> CreateObjectTemplate(void)
   {
-    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+    v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
 
-    v8::Handle<v8::ObjectTemplate> clazz = v8::ObjectTemplate::New();
+    v8::Local<v8::ObjectTemplate> clazz = v8::ObjectTemplate::New();
 
     SetupObjectTemplate(clazz);
 
-    return handle_scope.Close(clazz);
+    return handle_scope.Escape(clazz);
   }
 protected:
-  static v8::Handle<v8::Object> InternalWrap(T *obj)
+  static v8::Local<v8::Object> InternalWrap(T *obj)
   {
-    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+    v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
     v8::TryCatch try_catch;
 
 #ifdef __APPLE__
@@ -201,13 +194,13 @@ protected:
 #endif
 
     v8::Handle<v8::ObjectTemplate> l_template = v8::Local<v8::ObjectTemplate>::New(v8::Isolate::GetCurrent(), s_template);
-    v8::Handle<v8::Object> instance = l_template->NewInstance();
+    v8::Local<v8::Object> instance = l_template->NewInstance();
 
     ObjectTracer<T>::Trace(instance, obj);
 
-    instance->SetInternalField(0, v8::External::New(obj));
+    instance->SetInternalField(0, v8::External::New(v8::Isolate::GetCurrent(), obj));
 
-    return handle_scope.Close(instance);
+    return handle_scope.Escape(instance);
   }
 public:
   CBaseJavaObject(JNIEnv *pEnv, jobject obj) : __base__(pEnv, obj)
@@ -217,9 +210,9 @@ public:
 
   static v8::Handle<v8::Object> Wrap(JNIEnv *pEnv, jobject obj)
   {
-    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+    v8::EscapableHandleScope handle_scope(v8::Isolate::GetCurrent());
 
-    return handle_scope.Close(InternalWrap(new T(pEnv, obj)));
+    return handle_scope.Escape(InternalWrap(new T(pEnv, obj)));
   }
 
   static T& Unwrap(v8::Handle<v8::Object> obj)
@@ -317,9 +310,9 @@ public:
 
     CJavaFunction *func = new CJavaFunction(pEnv, methods);
 
-    func_tmpl->SetCallHandler(Caller, v8::External::New(func));
+    func_tmpl->SetCallHandler(Caller, v8::External::New(v8::Isolate::GetCurrent(), func));
 
-    v8::Handle<v8::Function> instance = func_tmpl->GetFunction();
+    v8::Local<v8::Function> instance = func_tmpl->GetFunction();
 
     ObjectTracer<CJavaFunction>::Trace(instance, func);
 
@@ -362,9 +355,9 @@ public:
 
     CJavaBoundMethod *func = new CJavaBoundMethod(pEnv, thiz, mid, is_void, has_args);
 
-    func_tmpl->SetCallHandler(Caller, v8::External::New(func));
+    func_tmpl->SetCallHandler(Caller, v8::External::New(v8::Isolate::GetCurrent(), func));
 
-    v8::Handle<v8::Function> instance = func_tmpl->GetFunction();
+    v8::Local<v8::Function> instance = func_tmpl->GetFunction();
 
     ObjectTracer<CJavaBoundMethod>::Trace(instance, func);
 

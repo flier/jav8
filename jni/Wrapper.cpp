@@ -142,7 +142,7 @@ void CJavaArray::IndexedEnumerator(
   jni::V8Env env(obj.m_pEnv);
 
   size_t length = obj.GetLength();
-  v8::Handle<v8::Array> result = v8::Array::New(length);
+  v8::Handle<v8::Array> result = v8::Array::New(v8::Isolate::GetCurrent(), length);
 
   for (size_t i=0; i<length; i++)
   {
@@ -316,7 +316,7 @@ void CJavaBoundMethod::Caller(const v8::FunctionCallbackInfo<v8::Value>& info)
     if (func.IsVoid())
     {
       pEnv->CallVoidMethod(thiz, mid, params);
-      info.GetReturnValue().Set(v8::Null());
+      info.GetReturnValue().Set(v8::Null(v8::Isolate::GetCurrent()));
     }
     else
     {
@@ -329,7 +329,7 @@ void CJavaBoundMethod::Caller(const v8::FunctionCallbackInfo<v8::Value>& info)
     if (func.IsVoid())
     {
       pEnv->CallVoidMethod(thiz, mid);
-      info.GetReturnValue().Set(v8::Null());
+      info.GetReturnValue().Set(v8::Null(v8::Isolate::GetCurrent()));
     }
     else
     {

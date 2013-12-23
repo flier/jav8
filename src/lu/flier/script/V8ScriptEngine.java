@@ -168,7 +168,12 @@ public final class V8ScriptEngine extends AbstractScriptEngine implements Invoca
 			throws ScriptException, NoSuchMethodException 
 	{
 		if (thiz instanceof V8Object) {
-			return ((V8Function) ((V8Object) thiz).get(name)).invoke(args);
+			V8Function func = ((V8Function) ((V8Object) thiz).get(name));
+			if (((V8Object)thiz).obj != 0) {
+				return func.invokeMethod(((V8Object)thiz).obj, args);
+			} else {
+				return ((V8Function) ((V8Object) thiz).get(name)).invoke(args);
+			}	
 		}
 		
 		Class<?>[] types = new Class<?>[args.length];

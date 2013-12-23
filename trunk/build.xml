@@ -4,6 +4,8 @@
 
 	<property name="project.name" value="jav8"/>
 
+	<property file="build.properties" />
+
 	<property name="src.dir" value="${basedir}/src" />
 	<property name="docs.dir" value="${basedir}/docs" />
 	<property name="test.dir" value="${basedir}/test" />
@@ -17,8 +19,6 @@
 	<property name="dist.dir" value="${basedir}/dist" />
 	<property name="lib.dir" value="${basedir}/lib" />
 	<property name="junit4.path" value="${lib.dir}/junit-4.9b3.jar" />
-
-	<property file="build.properties" />
 
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
 	    <classpath>

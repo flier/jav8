@@ -265,7 +265,7 @@ JNIEXPORT jobject JNICALL Java_lu_flier_script_V8Context_internalCreateObject
 {
   jni::V8Env env(pEnv);
 
-  return env.NewV8Object(v8::Object::New());
+  return env.NewV8Object(v8::Object::New(v8::Isolate::GetCurrent()));
 }
 
 JNIEXPORT jobject JNICALL Java_lu_flier_script_V8Context_internalCreateArray
@@ -627,7 +627,7 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetIntElements
 
   v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
     v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
-  v8::Handle<v8::Integer> zero = v8::Integer::New(0);
+  v8::Handle<v8::Integer> zero = v8::Integer::New(v8::Isolate::GetCurrent(), 0);
 
   jint *data = (jint *)(pEnv->GetPrimitiveArrayCritical(source, 0));
 
@@ -637,7 +637,7 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetIntElements
     if (d == 0) {
         array->Set(i, zero);
     } else {
-        array->Set(i, v8::Integer::New(d));
+        array->Set(i, v8::Integer::New(v8::Isolate::GetCurrent(), d));
     }
   }
 
@@ -656,7 +656,7 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetLongElements
 
   v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
     v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
-  v8::Handle<v8::Number> zero = v8::Number::New(0.0);
+  v8::Handle<v8::Number> zero = v8::Number::New(v8::Isolate::GetCurrent(), 0.0);
 
   jlong *data = (jlong *)(pEnv->GetPrimitiveArrayCritical(source, 0));
 
@@ -666,7 +666,7 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetLongElements
     if (d == 0) {
         array->Set(i, zero);
     } else {
-        array->Set(i, v8::Number::New(d));
+        array->Set(i, v8::Number::New(v8::Isolate::GetCurrent(), d));
     }
   }
 
@@ -685,7 +685,7 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetShortElements
 
   v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
     v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
-  v8::Handle<v8::Integer> zero = v8::Integer::New(0);
+  v8::Handle<v8::Integer> zero = v8::Integer::New(v8::Isolate::GetCurrent(), 0);
 
   jshort *data = (jshort *)(pEnv->GetPrimitiveArrayCritical(source, 0));
 
@@ -695,7 +695,7 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetShortElements
     if (d == 0) {
         array->Set(i, zero);
     } else {
-        array->Set(i, v8::Integer::New(d));
+        array->Set(i, v8::Integer::New(v8::Isolate::GetCurrent(), d));
     }
   }
 
@@ -714,7 +714,7 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetDoubleElements
 
   v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
     v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
-  v8::Handle<v8::Number> zero = v8::Number::New(0.0);
+  v8::Handle<v8::Number> zero = v8::Number::New(v8::Isolate::GetCurrent(), 0.0);
 
   jdouble *data = (jdouble *)(pEnv->GetPrimitiveArrayCritical(source, 0));
 
@@ -724,7 +724,7 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetDoubleElements
     if (d == 0.0) {
         array->Set(i, zero);
     } else {
-        array->Set(i, v8::Number::New(d));
+        array->Set(i, v8::Number::New(v8::Isolate::GetCurrent(), d));
     }
   }
 
@@ -743,7 +743,7 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetFloatElements
 
   v8::Handle<v8::Array> array = v8::Local<v8::Array>::New(
     v8::Isolate::GetCurrent(), *(v8::Persistent<v8::Array> *) pArray);
-  v8::Handle<v8::Number> zero = v8::Number::New(0.0);
+  v8::Handle<v8::Number> zero = v8::Number::New(v8::Isolate::GetCurrent(), 0.0);
 
   jfloat *data = (jfloat *)(pEnv->GetPrimitiveArrayCritical(source, 0));
 
@@ -753,7 +753,7 @@ JNIEXPORT void JNICALL Java_lu_flier_script_V8Array_internalSetFloatElements
     if (d == 0.0f) {
         array->Set(i, zero);
     } else {
-        array->Set(i, v8::Number::New(d));
+        array->Set(i, v8::Number::New(v8::Isolate::GetCurrent(), d));
     }
   }
 

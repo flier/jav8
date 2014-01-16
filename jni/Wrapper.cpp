@@ -43,7 +43,7 @@ void CJavaObject::NamedQuery(
   v8::String::Utf8Value name(prop);
 
   if (env.HasMember(obj.m_obj, *name)) {
-    info.GetReturnValue().Set(v8::Integer::New(v8::None));
+    info.GetReturnValue().Set(v8::Integer::New(v8::Isolate::GetCurrent(), v8::None));
   }
 }
 
@@ -68,7 +68,7 @@ void CJavaArray::NamedGetter(
   v8::String::Utf8Value name(prop);
 
   if (strcmp("length", *name) == 0) {
-    info.GetReturnValue().Set(v8::Uint32::New(obj.GetLength()));
+    info.GetReturnValue().Set(v8::Uint32::New(v8::Isolate::GetCurrent(), obj.GetLength()));
   } else {
     __base__::NamedGetter(prop, info);
   }
@@ -85,7 +85,7 @@ void CJavaArray::NamedQuery(
   v8::String::Utf8Value name(prop);
 
   if (strcmp("length", *name) == 0) {
-    info.GetReturnValue().Set(v8::Integer::New(v8::None));
+    info.GetReturnValue().Set(v8::Integer::New(v8::Isolate::GetCurrent(), v8::None));
   } else {
     __base__::NamedQuery(prop, info);
   }
@@ -128,7 +128,7 @@ void CJavaArray::IndexedQuery(
   jni::V8Env env(obj.m_pEnv);
 
   if (index < obj.GetLength()) {
-    info.GetReturnValue().Set(v8::Integer::New(v8::None));
+    info.GetReturnValue().Set(v8::Integer::New(v8::Isolate::GetCurrent(), v8::None));
   } else {
     __base__::IndexedQuery(index, info);
   }
@@ -146,7 +146,7 @@ void CJavaArray::IndexedEnumerator(
 
   for (size_t i=0; i<length; i++)
   {
-    result->Set(v8::Uint32::New(i), v8::Int32::New(i)->ToString());
+    result->Set(v8::Uint32::New(v8::Isolate::GetCurrent(), i), v8::Int32::New(v8::Isolate::GetCurrent(), i)->ToString());
   }
 
   info.GetReturnValue().Set(result);

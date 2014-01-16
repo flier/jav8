@@ -309,7 +309,7 @@ public:
   {
     jni::V8Env env(pEnv);
 
-    v8::Handle<v8::FunctionTemplate> func_tmpl = v8::FunctionTemplate::New();
+    v8::Handle<v8::FunctionTemplate> func_tmpl = v8::FunctionTemplate::New(v8::Isolate::GetCurrent());
 
     CJavaFunction *func = new CJavaFunction(pEnv, methods);
 
@@ -354,7 +354,7 @@ public:
   {
     jni::V8Env env(pEnv);
 
-    v8::Handle<v8::FunctionTemplate> func_tmpl = v8::FunctionTemplate::New();
+    v8::Handle<v8::FunctionTemplate> func_tmpl = v8::FunctionTemplate::New(v8::Isolate::GetCurrent());
 
     CJavaBoundMethod *func = new CJavaBoundMethod(pEnv, thiz, mid, is_void, has_args);
 
